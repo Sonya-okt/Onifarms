@@ -24,8 +24,6 @@ import MonitoringCircleSvg from '../../../components/svgFunComponent/MonitoringC
 import MonitoringMarkerLoc from '../../../components/svgFunComponent/MonitoringMarkerLoc';
 import BottomSheets from './BottomSheets';
 
-const {width, height} = Dimensions.get('window');
-
 const Monitoring: React.FC = () => {
 
   return (
@@ -68,9 +66,7 @@ const Monitoring: React.FC = () => {
                   style={{
                     height: '60%',
                     width: '100%',
-                    flexDirection: 'row',
-                    // borderColor: 'black',
-                    // borderWidth: 1,
+                    flexDirection: 'row',                    
                   }}>
                   <Text
                     style={{
@@ -81,11 +77,9 @@ const Monitoring: React.FC = () => {
 
                       textAlign: 'right',
                       fontSize: hp('2.5%'),
-                      position: 'absolute',
-                      // borderColor: 'orange',
-                      // borderWidth: 1,
+                      position: 'absolute',                     
                     }}>
-                    314
+                    120
                   </Text>
                   <Text
                     style={{
@@ -98,8 +92,6 @@ const Monitoring: React.FC = () => {
                       textAlign: 'right',
                       fontSize: hp('1.45%'),
                       position: 'absolute',
-                      // borderColor: 'blue',
-                      // borderWidth: 1,
                     }}>
                     hari
                   </Text>
@@ -212,8 +204,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignSelf: 'center',
     alignItems: 'center',
-    borderColor: 'black',
-    borderWidth: 1,
+    // borderColor: 'black',
+    // borderWidth: 1,
   },
   monitoringContainer: {
     top: 0,

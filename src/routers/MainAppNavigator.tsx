@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
+import AuthStackNav from './AuthNaviagator';
 import MonitoringScreen from '../pages/appScreen/monitoringScreen/MonitoringScreen';
 import NotificationScreen from '../pages/appScreen/notifikasiScreen/NotificationScreen';
 import KesuburanScreen from '../pages/appScreen/kesuburanScreen/KesuburanScreen';

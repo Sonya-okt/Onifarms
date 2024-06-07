@@ -21,16 +21,16 @@ const BottomSheets = () => {
       <BottomSheet
         ref={bottomSheetRef}
         onChange={handleSheetChanges}
-        index={1}
+        index={0}
         snapPoints={snapPoints}
         backgroundComponent={() => (
           <View style={StyleSheet.absoluteFill}>
             <LinearGradient
-              locations={[0, 0.44, 1]}
-              colors={['#e0f8f0', '#fefefe', '#9bd5b6']}
-              useAngle={true}
-              angle={168.99}
               style={styles.gradient}
+              colors={['#e0f8f0', '#fefefe', '#9bd5b6']}
+              start={{x: 0, y: -0.25}}
+              end={{x: 0.9, y: 0.8}}
+              locations={[0.1, 0.5, 1]}
             />
           </View>
         )}>
@@ -56,8 +56,8 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     borderRadius: wp('5%'),
-    borderColor: '#E6E6E6',
-    borderWidth: 0.8,
+    borderTopColor: '#E6E6E6',
+    borderTopStartRadius: 0.8,
   },
 });
 
