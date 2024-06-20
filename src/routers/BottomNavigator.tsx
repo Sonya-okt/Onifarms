@@ -11,10 +11,10 @@ import MonitoringScreen from '../pages/appScreen/monitoringScreen/MonitoringScre
 import NotificationScreen from '../pages/appScreen/notifikasiScreen/NotificationScreen';
 import KesuburanScreen from '../pages/appScreen/kesuburanScreen/KesuburanScreen';
 import PengaturanScreen from '../pages/appScreen/pengaturanScreen/PengaturanScreen';
-import MonitoringMenuIcon from '../components/svgFunComponent/bottomNavBarSvg/MonitoringMenuIcon';
-import NotificationMenuIcon from '../components/svgFunComponent/bottomNavBarSvg/NotificationMenuIcon';
-import KesuburanMenuIcon from '../components/svgFunComponent/bottomNavBarSvg/KesuburanMenuIcon';
-import PengaturanMenuIcon from '../components/svgFunComponent/bottomNavBarSvg/PengaturanMenuIcon';
+import MonitoringMenuIcon from '../components/svgFunComponent/bottomNavSvg/MonitoringMenuIcon';
+import NotificationMenuIcon from '../components/svgFunComponent/bottomNavSvg/NotificationMenuIcon';
+import KesuburanMenuIcon from '../components/svgFunComponent/bottomNavSvg/KesuburanMenuIcon';
+import PengaturanMenuIcon from '../components/svgFunComponent/bottomNavSvg/PengaturanMenuIcon';
 
 const Tab = createBottomTabNavigator();
 

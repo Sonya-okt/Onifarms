@@ -40,21 +40,23 @@ const NotificationScreen = () => {
 
   const renderItem = ({item}: {item: Notification}) => {
     return (
-      <View style={styles.container}>
-        <View style={styles.imagePosition}>
-          <Image
-            source={item.image}
-            style={styles.imageSize}
-            resizeMode="contain"
-          />
-        </View>
-        <View style={styles.containerText}>
-          <Text style={styles.textTitle}>{item.title}</Text>
-          <Text style={styles.textSubtitle}>{item.subtitle}</Text>
-        </View>
-        <View style={styles.timestampNotif}>
-          <Text style={styles.timeNotif}>{item.time}</Text>
-          <Text style={styles.dateNotif}>{item.date}</Text>
+      <View style={styles.parentContainer}>
+        <View style={styles.container}>
+          <View style={styles.imagePosition}>
+            <Image
+              source={item.image}
+              style={styles.imageSize}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.containerText}>
+            <Text style={styles.textTitle}>{item.title}</Text>
+            <Text style={styles.textSubtitle}>{item.subtitle}</Text>
+          </View>
+          <View style={styles.timestampNotif}>
+            <Text style={styles.timeNotif}>{item.time}</Text>
+            <Text style={styles.dateNotif}>{item.date}</Text>
+          </View>
         </View>
       </View>
     );
@@ -80,10 +82,15 @@ const styles = StyleSheet.create({
   linearGradient: {
     flex: 1,
     marginTop: hp('-2%'),
-    paddingTop: hp('3.5%'),
+    paddingTop: hp('2%'),
+
+    alignItems: 'center',
+  },
+  parentContainer: {
+    width: wp('98%'),
     alignItems: 'center',
     // borderColor: 'black',
-    // borderWidth: 1,
+    // borderWidth: 0.5,
   },
   container: {
     width: wp('89%'),
@@ -94,7 +101,7 @@ const styles = StyleSheet.create({
     borderColor: Color.PRIMARY,
     borderWidth: 0.7,
     borderRadius: wp('5%'),
-    marginBottom: hp('0.6%'),
+    marginTop: hp('1%'),
   },
   text: {
     fontSize: 13,

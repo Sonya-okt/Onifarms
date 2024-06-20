@@ -6,7 +6,7 @@ import {
 } from 'react-native-responsive-screen';
 import {useNavigation} from '@react-navigation/native';
 import {FontFamily, Color} from '../../constants/GlobalStyles';
-import BackIcon from '../svgFunComponent/bottomNavBarSvg/BackIcon';
+import BackIcon from '../svgFunComponent/bottomNavSvg/BackIcon';
 
 const TitlePage: React.FC<{Title: string}> = ({Title}) => {
   const navigation = useNavigation();

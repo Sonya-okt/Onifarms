@@ -4,9 +4,13 @@ import {ViewStyle} from 'react-native';
 
 interface MonitoringCircleSvgProps {
   style?: ViewStyle; // Tambahkan properti style
+  fill?: string;
 }
 
-const MonitoringCircleSvg: React.FC<MonitoringCircleSvgProps> = ({style}) => {
+const MonitoringCircleSvg: React.FC<MonitoringCircleSvgProps> = ({
+  style,
+  fill,
+}) => {
   return (
     <Svg
       width="100%"
@@ -14,7 +18,7 @@ const MonitoringCircleSvg: React.FC<MonitoringCircleSvgProps> = ({style}) => {
       viewBox="0 0 128 128"
       fill="none"
       style={style}>
-      <Circle cx="64" cy="63" r="63" fill="#D9D9D9" />
+      <Circle cx="64" cy="63" r="63" fill={fill} />
     </Svg>
   );
 };

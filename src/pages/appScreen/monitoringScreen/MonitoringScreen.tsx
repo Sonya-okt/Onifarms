@@ -1,191 +1,141 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unused-vars */
- 
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  ImageBackground,
-  ScrollView,
-  Dimensions,
-  Image,
-  Text,
-} from 'react-native';
-import TitlePage from '../../../components/recycle/TitlePage';
-import BottomPage from '../../../components/recycle/BottomPage';
+
+import React, {useCallback, useMemo, useRef, useState, useEffect} from 'react';
+import {View, StyleSheet, ImageBackground, Image, Text} from 'react-native';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
-import BottomSheet, {BottomSheetScrollView} from '@gorhom/bottom-sheet';
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
-import MonitoringCircleSvg from '../../../components/svgFunComponent/MonitoringCircleSvg';
-import MonitoringMarkerLoc from '../../../components/svgFunComponent/MonitoringMarkerLoc';
+import MonitoringCircleSvg from '../../../components/svgFunComponent/monitoringScreenSvg/CircleSvg';
+import MonitoringMarkerLoc from '../../../components/svgFunComponent/monitoringScreenSvg/MonitoringMarkerLoc';
 import BottomSheets from './BottomSheets';
 
 const Monitoring: React.FC = () => {
-
   return (
-    <View style={styles.container}>
-      <View style={styles.viewContainer}> 
-          <BottomSheets/>
-        <View style={styles.monitoringContainer}>
-          <ImageBackground
-            source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
-            resizeMode="cover"
-            style={styles.sawahField}>
-            <View style={styles.topLocationMasaTanam}>
-              <View style={styles.topLocation}>
-                <MonitoringMarkerLoc />
-                <Text style={styles.topText}>Tembalang, Semarang</Text>
-              </View>
-              <Image
-                source={require('../../../components/images/monitoringImage/monitoringDay.png')}
-                resizeMode="contain"
-                style={styles.dayNightImage}
-              />
-              <View
-                style={{
-                  height: '65%',
-                  width: '40%',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}>
-                <Text
-                  style={{
-                    fontFamily: FontFamily.poppinsBold,
-                    width: '100%',
-                    color: 'black',
-                    textAlign: 'right',
-                    fontSize: hp('1.45%'),
-                  }}>
-                  Usia Tanam :
-                </Text>
-                <View
-                  style={{
-                    height: '60%',
-                    width: '100%',
-                    flexDirection: 'row',                    
-                  }}>
-                  <Text
-                    style={{
-                      fontFamily: FontFamily.poppinsBold,
-                      right: '18%',
-                      bottom: '-16%',
-                      color: 'black',
-
-                      textAlign: 'right',
-                      fontSize: hp('2.5%'),
-                      position: 'absolute',                     
-                    }}>
-                    120
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: FontFamily.poppinsBold,
-                      width: '100%',
-                      height: '60%',
-                      bottom: 0,
-                      color: 'black',
-
-                      textAlign: 'right',
-                      fontSize: hp('1.45%'),
-                      position: 'absolute',
-                    }}>
-                    hari
-                  </Text>
-                </View>
+    <View style={styles.viewContainer}>
+      <BottomSheets />
+      <View style={styles.monitoringContainer}>
+        <ImageBackground
+          source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
+          resizeMode="cover"
+          style={styles.sawahField}>
+          <View style={styles.topLocationMasaTanam}>
+            <View style={styles.topLocation}>
+              <MonitoringMarkerLoc />
+              <Text style={styles.topText}>Tembalang, Semarang</Text>
+            </View>
+            <Image
+              source={require('../../../components/images/monitoringImage/monitoringDay.png')}
+              resizeMode="contain"
+              style={styles.dayNightImage}
+            />
+            <View style={styles.topMonitoring}>
+              <Text style={styles.textUsiaTanam}>Usia Tanam :</Text>
+              <View style={styles.textUsiaTanamHari}>
+                <Text style={styles.textJumlahHari}>120</Text>
+                <Text style={styles.textHari}>HST</Text>
               </View>
             </View>
-            <View style={styles.monitoringNumContainer}>
-              <View style={[styles.lineCenter, styles.lineVertical]} />
-              <View style={[styles.lineCenter, styles.lineHorizontal]} />
-              <View style={styles.insideMonitoringContainer}>
-                <View style={styles.dividerMonitoringContainer}>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>Suhu Tanah</Text>
-                    <View style={styles.svgWrapper}>
-                      <MonitoringCircleSvg style={styles.absolutePosition} />
-                      <Text style={styles.monitoringNumber}>35</Text>
-                      <Text style={styles.monitoringUnit}>°C</Text>
-                    </View>
-                  </View>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>Kelembapan</Text>
-                    <View style={styles.svgWrapper}>
-                      <MonitoringCircleSvg style={styles.absolutePosition} />
-                      <Text style={styles.monitoringNumber}>80</Text>
-                      <Text style={styles.monitoringUnit}>%</Text>
-                    </View>
+          </View>
+          <View style={styles.monitoringNumContainer}>
+            <View style={[styles.lineCenter, styles.lineVertical]} />
+            <View style={[styles.lineCenter, styles.lineHorizontal]} />
+            <View style={styles.insideMonitoringContainer}>
+              <View style={styles.dividerMonitoringContainer}>
+                <View style={styles.miniMonitoringContainer}>
+                  <Text style={styles.monitoringText}>Suhu Tanah</Text>
+                  <View style={styles.svgWrapper}>
+                    <MonitoringCircleSvg
+                      fill="#D9D9D9"
+                      style={styles.absolutePosition}
+                    />
+                    <Text style={styles.monitoringNumber}>35</Text>
+                    <Text style={styles.monitoringUnit}>°C</Text>
                   </View>
                 </View>
-                <View style={styles.dividerMonitoringContainer}>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>pH</Text>
-                    <View style={styles.svgWrapper}>
-                      <MonitoringCircleSvg style={styles.absolutePosition} />
-                      <Text style={styles.monitoringNumber}>6.5</Text>
-                    </View>
+                <View style={styles.miniMonitoringContainer}>
+                  <Text style={styles.monitoringText}>Kelembapan</Text>
+                  <View style={styles.svgWrapper}>
+                    <MonitoringCircleSvg
+                      fill="#D9D9D9"
+                      style={styles.absolutePosition}
+                    />
+                    <Text style={styles.monitoringNumber}>80</Text>
+                    <Text style={styles.monitoringUnit}>%</Text>
                   </View>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>NPK</Text>
-                    <View style={styles.tripleNPKContainer}>
-                      <View style={styles.tripleNPKNitrogen}>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                          Nitrogen
-                        </Text>
-                        <View style={styles.numberNPKCircle}>
-                          <MonitoringCircleSvg
-                            style={styles.absolutePosition}
-                          />
-                          <Text style={styles.numberNPKText}>225</Text>
-                        </View>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                          ppm
-                        </Text>
+                </View>
+              </View>
+              <View style={styles.dividerMonitoringContainer}>
+                <View style={styles.miniMonitoringContainer}>
+                  <Text style={styles.monitoringText}>pH</Text>
+                  <View style={styles.svgWrapper}>
+                    <MonitoringCircleSvg
+                      fill="#D9D9D9"
+                      style={styles.absolutePosition}
+                    />
+                    <Text style={styles.monitoringNumber}>6.5</Text>
+                  </View>
+                </View>
+                <View style={styles.miniMonitoringContainer}>
+                  <Text style={styles.monitoringText}>NPK</Text>
+                  <View style={styles.tripleNPKContainer}>
+                    <View style={styles.tripleNPKNitrogen}>
+                      <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                        Nitrogen
+                      </Text>
+                      <View style={styles.numberNPKCircle}>
+                        <MonitoringCircleSvg
+                          fill="#D9D9D9"
+                          style={styles.absolutePosition}
+                        />
+                        <Text style={styles.numberNPKText}>225</Text>
                       </View>
-                      <View
-                        style={[styles.tripleNPKKaliumPhosphor, {left: '3%'}]}>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                          Kalium
-                        </Text>
-                        <View style={styles.numberNPKCircle}>
-                          <MonitoringCircleSvg
-                            style={styles.absolutePosition}
-                          />
-                          <Text style={styles.numberNPKText}>225</Text>
-                        </View>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                          ppm
-                        </Text>
+                      <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                        ppm
+                      </Text>
+                    </View>
+                    <View
+                      style={[styles.tripleNPKKaliumPhosphor, {left: '3%'}]}>
+                      <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                        Kalium
+                      </Text>
+                      <View style={styles.numberNPKCircle}>
+                        <MonitoringCircleSvg
+                          fill="#D9D9D9"
+                          style={styles.absolutePosition}
+                        />
+                        <Text style={styles.numberNPKText}>225</Text>
                       </View>
-                      <View
-                        style={[styles.tripleNPKKaliumPhosphor, {right: '3%'}]}>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                          Phosphor
-                        </Text>
-                        <View style={styles.numberNPKCircle}>
-                          <MonitoringCircleSvg
-                            style={styles.absolutePosition}
-                          />
-                          <Text style={styles.numberNPKText}>2000</Text>
-                        </View>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                          ppm
-                        </Text>
+                      <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                        ppm
+                      </Text>
+                    </View>
+                    <View
+                      style={[styles.tripleNPKKaliumPhosphor, {right: '3%'}]}>
+                      <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                        Phosphor
+                      </Text>
+                      <View style={styles.numberNPKCircle}>
+                        <MonitoringCircleSvg
+                          fill="#D9D9D9"
+                          style={styles.absolutePosition}
+                        />
+                        <Text style={styles.numberNPKText}>2000</Text>
                       </View>
+                      <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                        ppm
+                      </Text>
                     </View>
                   </View>
                 </View>
               </View>
             </View>
-          </ImageBackground>
-        </View>
-        
-      
+          </View>
+        </ImageBackground>
       </View>
-
     </View>
   );
 };
@@ -194,18 +144,47 @@ const styles = StyleSheet.create({
   absolutePosition: {
     position: 'absolute',
   },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   viewContainer: {
     marginTop: hp('-2%'),
     flex: 1,
-    alignSelf: 'center',
     alignItems: 'center',
-    // borderColor: 'black',
-    // borderWidth: 1,
+    // borderColor: 'blue',
+    // borderWidth: 2,
+  },
+  topMonitoring: {
+    height: '65%',
+    width: '40%',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  textUsiaTanam: {
+    fontFamily: FontFamily.poppinsMedium,
+    width: '100%',
+    color: 'black',
+    textAlign: 'right',
+    fontSize: hp('1.45%'),
+  },
+  textUsiaTanamHari: {
+    height: '60%',
+    width: '100%',
+    flexDirection: 'row',
+  },
+  textJumlahHari: {
+    fontFamily: FontFamily.poppinsMedium,
+    right: '18%',
+    color: 'black',
+    textAlign: 'right',
+    fontSize: hp('2.5%'),
+    position: 'absolute',
+  },
+  textHari: {
+    fontFamily: FontFamily.poppinsMedium,
+    right: 0,
+    bottom: 0,
+    color: 'black',
+    textAlign: 'right',
+    fontSize: hp('1.35%'),
+    position: 'absolute',
   },
   monitoringContainer: {
     top: 0,
@@ -292,10 +271,10 @@ const styles = StyleSheet.create({
   },
   monitoringNumber: {
     width: '95%',
-    top: '-2%',
+    marginTop: '6%',
     textAlign: 'center',
     justifyContent: 'center',
-    fontSize: hp('7%'),
+    fontSize: hp('6%'),
     fontFamily: FontFamily.poppinsRegular,
     color: 'black',
   },
@@ -341,7 +320,7 @@ const styles = StyleSheet.create({
   numberNPKText: {
     width: '95%',
     textAlign: 'center',
-    fontSize: hp('2%'),
+    fontSize: hp('1.8%'),
     fontFamily: FontFamily.poppinsBold,
     fontWeight: 'bold',
     color: 'black',
@@ -369,7 +348,7 @@ const styles = StyleSheet.create({
   },
   topText: {
     width: '90%',
-    fontFamily: FontFamily.poppinsBold,
+    fontFamily: FontFamily.poppinsMedium,
     color: 'black',
     textAlign: 'left',
     marginLeft: '1.5%',

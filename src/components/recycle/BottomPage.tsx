@@ -5,10 +5,10 @@ import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
-import MonitoringMenuIcon from '../svgFunComponent/bottomNavBarSvg/MonitoringMenuIcon';
-import NotificationMenuIcon from '../svgFunComponent/bottomNavBarSvg/NotificationMenuIcon';
-import KesuburanMenuIcon from '../../components/svgFunComponent/bottomNavBarSvg/KesuburanMenuIcon';
-import PengaturanMenuIcon from '../../components/svgFunComponent/bottomNavBarSvg/PengaturanMenuIcon';
+import MonitoringMenuIcon from '../svgFunComponent/bottomNavSvg/MonitoringMenuIcon';
+import NotificationMenuIcon from '../svgFunComponent/bottomNavSvg/NotificationMenuIcon';
+import KesuburanMenuIcon from '../svgFunComponent/bottomNavSvg/KesuburanMenuIcon';
+import PengaturanMenuIcon from '../svgFunComponent/bottomNavSvg/PengaturanMenuIcon';
 
 const BottomPage: React.FC = () => {
   return (
