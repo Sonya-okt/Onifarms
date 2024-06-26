@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -24,22 +24,79 @@ import AddBendenganSvg from '../../../components/svgFunComponent/monitoringScree
 import AngleUpSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AngleUpSvg';
 import AngleDownSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AngleDownSvg';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {getWeather, WeatherResponse} from '../../../components/api/OpenWeather';
 
 type RootStackParamList = {
   MonitoringScreen: undefined;
   MapScreen: undefined;
 };
 
-const BottomSheets: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [bendenganList, setBendenganList] = useState<number[]>([1]); // Initial list with one item
+const formatTanggal = () => {
+  const bulan = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+  const today = new Date();
+  const tanggal = today.getDate();
+  const namaBulan = bulan[today.getMonth()];
+  const tahun = today.getFullYear();
+  return `${tanggal} ${namaBulan} ${tahun}`;
+};
 
-  const snapPoints = useMemo(() => ['22%', '98%'], []);
+interface BottomSheetsProps {
+  weatherData: WeatherResponse | null;
+  selectedLocation: string;
+}
+
+const BottomSheets: React.FC<BottomSheetsProps> = ({
+  weatherData,
+  selectedLocation,
+}) => {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [bendenganList, setBendenganList] = useState<number[]>([1]);
+  const [currentWeatherData, setCurrentWeatherData] =
+    useState<WeatherResponse | null>(weatherData);
+
+  const snapPoints = useMemo(() => ['31%', '98%'], []);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const handleSheetChanges = useCallback((index: number) => {
     console.log('handleSheetChanges', index);
+    if (index === 1) {
+      fetchCurrentWeather();
+    }
   }, []);
+
+  useEffect(() => {
+    if (selectedLocation) {
+      fetchCurrentWeather();
+    }
+  }, [selectedLocation]);
+
+  useEffect(() => {
+    setCurrentWeatherData(weatherData);
+  }, [weatherData]);
+
+  const fetchCurrentWeather = async () => {
+    if (selectedLocation) {
+      try {
+        const newWeatherData = await getWeather(selectedLocation);
+        setCurrentWeatherData(newWeatherData);
+      } catch (error) {
+        console.error('Error fetching weather data:', error);
+      }
+    }
+  };
 
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
@@ -72,7 +129,7 @@ const BottomSheets: React.FC = () => {
   };
 
   const tableData = [
-    ['Suhu', ':', '25 - 30 C'],
+    ['Suhu', ':', '25 - 30 °C'],
     ['Kelembapan', ':', '65 - 80 %'],
     ['pH', ':', '5 - 8'],
     ['Nitrogen', ':', '100 - 200ppm'],
@@ -128,10 +185,14 @@ const BottomSheets: React.FC = () => {
       <View style={styles.suhuContainer}>
         <View>
           <Text style={styles.titleText}>Suhu saat ini</Text>
-          <Text style={styles.tanggal}>19 Juni 2024</Text>
+          <Text style={styles.tanggal}>{formatTanggal()}</Text>
         </View>
         <View style={{flexDirection: 'row'}}>
-          <Text style={styles.suhuUdara}>32</Text>
+          <Text style={styles.suhuUdara}>
+            {currentWeatherData
+              ? Math.round(currentWeatherData.main.temp)
+              : '--'}
+          </Text>
           <Text style={styles.suhuUdara}>°C</Text>
         </View>
       </View>
@@ -162,7 +223,8 @@ const BottomSheets: React.FC = () => {
           colors={['#e0f8f0', '#fefefe', '#9bd5b6']}
           start={{x: 0, y: -0.25}}
           end={{x: 0.9, y: 0.8}}
-          locations={[0.1, 0.5, 1]}></LinearGradient>
+          locations={[0.1, 0.5, 1]}
+        />
       </View>
     ),
     [openIndex],
@@ -175,7 +237,8 @@ const BottomSheets: React.FC = () => {
         onChange={handleSheetChanges}
         index={0}
         snapPoints={snapPoints}
-        backgroundComponent={renderBackground}>
+        backgroundComponent={renderBackground}
+        style={styles.bottomSheet}>
         {renderContent()}
       </BottomSheet>
     </View>
@@ -186,9 +249,14 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     width: wp('100%'),
-    height: '100%',
+    height: hp('100%'),
     alignItems: 'center',
     zIndex: 1,
+    pointerEvents: 'box-none',
+  },
+  bottomSheet: {
+    zIndex: 1,
+    pointerEvents: 'box-none',
   },
   gradient: {
     flex: 1,

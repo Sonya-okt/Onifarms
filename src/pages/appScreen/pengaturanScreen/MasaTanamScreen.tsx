@@ -1,21 +1,21 @@
+import React, {useState, useEffect} from 'react';
 import {
-  Image,
-  StyleSheet,
+  View,
   Text,
   TouchableOpacity,
-  View,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import React, {useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
+import {Calendar} from 'react-native-calendars';
+import {EventRegister} from 'react-native-event-listeners';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
-import {Calendar} from 'react-native-calendars';
 import MulaiTanamSvg from '../../../components/svgFunComponent/pengaturanSvg/MulaiTanamSvg';
 import PanenSvg from '../../../components/svgFunComponent/pengaturanSvg/PanenSvg';
 
@@ -61,6 +61,7 @@ const MasaTanamScreen: React.FC = () => {
   }) => {
     try {
       await AsyncStorage.setItem('dates', JSON.stringify(dates));
+      EventRegister.emit('datesChanged', dates);
     } catch (error) {
       console.error('Failed to save dates to storage', error);
     }
@@ -70,12 +71,10 @@ const MasaTanamScreen: React.FC = () => {
     const selectedDate = day.dateString;
     let newDates = {...dates};
 
-    // Cek apakah tanggal sudah ditandai
     if (
       newDates.startDate.includes(selectedDate) ||
       newDates.harvestDate.includes(selectedDate)
     ) {
-      // Jika sudah ditandai, tampilkan opsi untuk menghapus mark
       Alert.alert(
         'Opsi',
         'Pilih opsi untuk tanggal ini',
@@ -86,7 +85,6 @@ const MasaTanamScreen: React.FC = () => {
         {cancelable: true},
       );
     } else {
-      // Jika belum ditandai, tambahkan mark selang-seling
       if (
         newDates.startDate.length === 0 ||
         (newDates.harvestDate.length > 0 &&
@@ -175,7 +173,6 @@ const MasaTanamScreen: React.FC = () => {
   const renderMarkedDates = () => {
     const markedDates = getMarkedDates();
     for (let date in markedDates) {
-      // Update here to add onPress handler for each marked date
       markedDates[date].onPress = () => {
         Alert.alert(
           'Opsi Tanggal',
@@ -250,7 +247,6 @@ const MasaTanamScreen: React.FC = () => {
                 styles.mulaiTanamTextTanggal,
                 {color: Color.YELLOW_MASTAM},
               ]}>
-              {/* Tampilkan tanda '-' jika marker terakhir adalah Mulai Tanam */}
               {dates.startDate.length > dates.harvestDate.length
                 ? '-'
                 : harvestDate || '-'}

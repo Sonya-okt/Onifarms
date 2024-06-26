@@ -1,5 +1,14 @@
-import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {useState, useEffect, useRef} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Platform,
+  PermissionsAndroid,
+  Alert,
+} from 'react-native';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {
   heightPercentageToDP as hp,
@@ -10,6 +19,11 @@ import {Color, FontFamily} from '../../../constants/GlobalStyles';
 import PhotoProfile from '../../../components/svgFunComponent/pengaturanSvg/PhotoProfile';
 import AddPhoto from '../../../components/svgFunComponent/pengaturanSvg/AddPhoto';
 import ButtonNavigation from '../../../components/svgFunComponent/pengaturanSvg/ButtonNavigation';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ActionSheet, {ActionSheetRef} from 'react-native-actions-sheet';
+import auth from '@react-native-firebase/auth';
 
 // Define the type for the navigation parameters
 type RootStackParamList = {
@@ -17,10 +31,86 @@ type RootStackParamList = {
   PengaturanScreen: undefined;
   JadwalPenyiraman: undefined;
   DataRecord: undefined;
+  LoginScreen: undefined; // Add LoginScreen to navigation stack
 };
 
 const PengaturanScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const actionSheetRef = useRef<ActionSheetRef>(null);
+
+  useEffect(() => {
+    const loadPhoto = async () => {
+      const savedPhotoUri = await AsyncStorage.getItem('profilePhoto');
+      if (savedPhotoUri) {
+        setPhotoUri(savedPhotoUri);
+      }
+    };
+
+    loadPhoto();
+  }, []);
+
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Camera Permission',
+          message: 'App needs camera permission',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } else {
+      const result = await request(PERMISSIONS.IOS.CAMERA);
+      return result === RESULTS.GRANTED;
+    }
+  };
+
+  const handleCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (hasPermission) {
+      launchCamera({mediaType: 'photo'}, async response => {
+        if (response.assets && response.assets.length > 0) {
+          const uri = response.assets[0].uri ?? null;
+          if (uri) {
+            setPhotoUri(uri);
+            await AsyncStorage.setItem('profilePhoto', uri);
+          }
+        }
+      });
+    } else {
+      Alert.alert('Camera permission denied');
+    }
+  };
+
+  const handleGallery = () => {
+    launchImageLibrary({mediaType: 'photo'}, async response => {
+      if (response.assets && response.assets.length > 0) {
+        const uri = response.assets[0].uri ?? null;
+        if (uri) {
+          setPhotoUri(uri);
+          await AsyncStorage.setItem('profilePhoto', uri);
+        }
+      }
+    });
+  };
+
+  const handleProfilePhotoPress = () => {
+    actionSheetRef.current?.setModalVisible(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth().signOut();
+      navigation.navigate('LoginScreen');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to log out');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -32,10 +122,15 @@ const PengaturanScreen: React.FC = () => {
         <View style={styles.profileContainer}>
           <TouchableOpacity
             style={styles.photoProfileCircle}
-            onPress={() => {}}>
-            <AddPhoto style={styles.addPhoto} />
-            <PhotoProfile />
-            <View />
+            onPress={handleProfilePhotoPress}>
+            {photoUri ? (
+              <Image source={{uri: photoUri}} style={styles.profileImage} />
+            ) : (
+              <>
+                <AddPhoto style={styles.addPhoto} />
+                <PhotoProfile />
+              </>
+            )}
           </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>Juragan Bawang</Text>
@@ -69,12 +164,28 @@ const PengaturanScreen: React.FC = () => {
               <Text style={styles.buttonText}>Data Record</Text>
               <ButtonNavigation />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.logoutbuttonStyle}>
+            <TouchableOpacity
+              style={styles.logoutbuttonStyle}
+              onPress={handleLogout}>
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
       </LinearGradient>
+      <ActionSheet ref={actionSheetRef}>
+        <View>
+          <TouchableOpacity onPress={handleCamera}>
+            <Text style={styles.actionSheetText}>Take Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleGallery}>
+            <Text style={styles.actionSheetText}>Choose from Gallery</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => actionSheetRef.current?.setModalVisible(false)}>
+            <Text style={styles.actionSheetText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </ActionSheet>
     </View>
   );
 };
@@ -93,20 +204,10 @@ const styles = StyleSheet.create({
     borderColor: Color.PRIMARY,
     alignItems: 'center',
   },
-  ccontainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    fontSize: 20,
-  },
   profileContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: hp('3%'),
-    // borderWidth: wp('0.3%'),
-    // borderColor: 'black',
   },
   photoProfileCircle: {
     width: wp('25%'),
@@ -118,6 +219,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     aspectRatio: 1,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: wp('100%'),
   },
   addPhoto: {
     bottom: 0,
@@ -181,5 +287,10 @@ const styles = StyleSheet.create({
     fontSize: wp('4%'),
     color: Color.PRIMARY,
   },
+  actionSheetText: {
+    padding: 20,
+    fontSize: 18,
+  },
 });
+
 export default PengaturanScreen;

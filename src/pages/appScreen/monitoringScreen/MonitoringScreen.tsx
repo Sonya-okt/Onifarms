@@ -1,9 +1,17 @@
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
-import React, {useCallback, useMemo, useRef, useState, useEffect} from 'react';
-import {View, StyleSheet, ImageBackground, Image, Text} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  StyleSheet,
+  ImageBackground,
+  Image,
+  Text,
+  TouchableOpacity,
+  Modal,
+  Button,
+  Keyboard,
+  KeyboardAvoidingView,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
@@ -12,131 +20,344 @@ import {Color, FontFamily} from '../../../constants/GlobalStyles';
 import MonitoringCircleSvg from '../../../components/svgFunComponent/monitoringScreenSvg/CircleSvg';
 import MonitoringMarkerLoc from '../../../components/svgFunComponent/monitoringScreenSvg/MonitoringMarkerLoc';
 import BottomSheets from './BottomSheets';
+import LocationSearch, {
+  WeatherResponse,
+} from '../../../components/api/OpenWeather';
+import {EventRegister} from 'react-native-event-listeners';
+import database from '@react-native-firebase/database';
 
-const Monitoring: React.FC = () => {
+const MonitoringScreen: React.FC = () => {
+  const [dayNightImage, setDayNightImage] = useState(
+    require('../../../components/images/monitoringImage/monitoringDay.png'),
+  );
+  const [modalVisible, setModalVisible] = useState(false);
+  const [location, setLocation] = useState('Tembalang');
+  const [isTyping, setIsTyping] = useState(false);
+  const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [harvestDate, setHarvestDate] = useState<string | null>(null);
+  const [jumlahHari, setJumlahHari] = useState<number>(0);
+
+  const [suhu, setSuhu] = useState<number>(0);
+  const [kelembapan, setKelembapan] = useState<number>(0);
+  const [ph, setPh] = useState<number>(0);
+  const [nitrogen, setNitrogen] = useState<number>(0);
+  const [phosphor, setPhosphor] = useState<number>(0);
+  const [kalium, setKalium] = useState<number>(0);
+
+  useEffect(() => {
+    const updateImageBasedOnTime = () => {
+      const currentHour = new Date().getHours();
+      if (currentHour >= 6 && currentHour < 18) {
+        setDayNightImage(
+          require('../../../components/images/monitoringImage/monitoringDay.png'),
+        );
+      } else {
+        setDayNightImage(
+          require('../../../components/images/monitoringImage/monitoringNight.png'),
+        );
+      }
+    };
+
+    updateImageBasedOnTime();
+    const interval = setInterval(updateImageBasedOnTime, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchStoredData = async () => {
+    try {
+      const storedLocation = await AsyncStorage.getItem('location');
+      const storedDates = await AsyncStorage.getItem('dates');
+
+      if (storedLocation) {
+        setLocation(storedLocation);
+      }
+
+      if (storedDates) {
+        const parsedDates = JSON.parse(storedDates);
+        setStartDate(parsedDates.startDate.slice(-1)[0] || null);
+        setHarvestDate(parsedDates.harvestDate.slice(-1)[0] || null);
+        updateJumlahHari(parsedDates);
+      }
+    } catch (error) {
+      console.error('Error fetching stored data:', error);
+    }
+  };
+
+  const updateJumlahHari = (dates: {
+    startDate: string[];
+    harvestDate: string[];
+  }) => {
+    const today = new Date();
+    let calculatedDays = 0;
+
+    for (let i = 0; i < dates.startDate.length; i++) {
+      const start = new Date(dates.startDate[i]);
+      const harvest = dates.harvestDate[i]
+        ? new Date(dates.harvestDate[i])
+        : null;
+
+      if (!harvest || today < harvest) {
+        const diffTime = today.getTime() - start.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        calculatedDays += diffDays;
+      } else {
+        calculatedDays = 0;
+      }
+    }
+
+    setJumlahHari(calculatedDays);
+  };
+
+  useEffect(() => {
+    fetchStoredData();
+
+    const handleDatesChanged = (dates: {
+      startDate: string[];
+      harvestDate: string[];
+    }) => {
+      setStartDate(dates.startDate.slice(-1)[0] || null);
+      setHarvestDate(dates.harvestDate.slice(-1)[0] || null);
+      updateJumlahHari(dates);
+    };
+
+    const listener = EventRegister.on(
+      'datesChanged',
+      handleDatesChanged,
+    ) as string;
+
+    return () => {
+      EventRegister.rm(listener);
+    };
+  }, [startDate, harvestDate]);
+
+  useEffect(() => {
+    const suhuRef = database().ref('1002/Average/suhu');
+    const kelembapanRef = database().ref('1002/Average/kelembapan');
+    const phRef = database().ref('1002/Average/ph');
+    const nitrogenRef = database().ref('1002/Average/nitrogen');
+    const phosphorRef = database().ref('1002/Average/phosphor');
+    const kaliumRef = database().ref('1002/Average/kalium');
+
+    const onValueChange = (
+      snapshot: any,
+      setState: React.Dispatch<React.SetStateAction<number>>,
+      label: string,
+    ) => {
+      if (snapshot.exists()) {
+        setState(snapshot.val());
+        console.log(`${label} data: `, snapshot.val());
+      } else {
+        console.log(`${label} data not found`);
+      }
+    };
+
+    const suhuListener = suhuRef.on('value', snapshot =>
+      onValueChange(snapshot, setSuhu, 'Suhu'),
+    );
+    const kelembapanListener = kelembapanRef.on('value', snapshot =>
+      onValueChange(snapshot, setKelembapan, 'Kelembapan'),
+    );
+    const phListener = phRef.on('value', snapshot =>
+      onValueChange(snapshot, setPh, 'pH'),
+    );
+    const nitrogenListener = nitrogenRef.on('value', snapshot =>
+      onValueChange(snapshot, setNitrogen, 'Nitrogen'),
+    );
+    const phosphorListener = phosphorRef.on('value', snapshot =>
+      onValueChange(snapshot, setPhosphor, 'Phosphor'),
+    );
+    const kaliumListener = kaliumRef.on('value', snapshot =>
+      onValueChange(snapshot, setKalium, 'Kalium'),
+    );
+
+    return () => {
+      suhuRef.off('value', suhuListener);
+      kelembapanRef.off('value', kelembapanListener);
+      phRef.off('value', phListener);
+      nitrogenRef.off('value', nitrogenListener);
+      phosphorRef.off('value', phosphorListener);
+      kaliumRef.off('value', kaliumListener);
+    };
+  }, []);
+
+  const handleLocationSelect = async (
+    item: any,
+    weatherData: WeatherResponse | null,
+  ) => {
+    const locality =
+      item.address.village || item.address.town || item.address.city;
+    const adminArea =
+      item.address.county || item.address.state || item.address.region;
+
+    let selectedLocation = '';
+    if (locality && adminArea) {
+      selectedLocation = `${locality}, ${adminArea}`;
+    } else {
+      selectedLocation = item.display_name;
+    }
+    setLocation(selectedLocation);
+    setWeatherData(weatherData);
+    setModalVisible(false);
+
+    storeLocation(selectedLocation);
+  };
+
+  const storeLocation = async (location: string) => {
+    try {
+      await AsyncStorage.setItem('location', location);
+    } catch (error) {
+      console.error('Error storing location:', error);
+    }
+  };
+
   return (
-    <View style={styles.viewContainer}>
-      <BottomSheets />
-      <View style={styles.monitoringContainer}>
-        <ImageBackground
-          source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
-          resizeMode="cover"
-          style={styles.sawahField}>
-          <View style={styles.topLocationMasaTanam}>
-            <View style={styles.topLocation}>
-              <MonitoringMarkerLoc />
-              <Text style={styles.topText}>Tembalang, Semarang</Text>
+    <KeyboardAvoidingView>
+      <View style={styles.viewContainer}>
+        <BottomSheets weatherData={weatherData} selectedLocation={location} />
+        <View style={styles.monitoringContainer}>
+          <ImageBackground
+            source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
+            resizeMode="cover"
+            style={styles.sawahField}>
+            <View style={styles.topLocationMasaTanam}>
+              <TouchableOpacity
+                style={styles.topLocation}
+                onPress={() => setModalVisible(true)}>
+                <MonitoringMarkerLoc />
+                <Text style={styles.topText}>{location}</Text>
+              </TouchableOpacity>
+              <Image
+                source={dayNightImage}
+                resizeMode="contain"
+                style={styles.dayNightImage}
+              />
+              <View style={styles.topMonitoring}>
+                <Text style={styles.textUsiaTanam}>Usia Tanam :</Text>
+                <View style={styles.textUsiaTanamHari}>
+                  <Text style={styles.textJumlahHari}>{jumlahHari}</Text>
+                  <Text style={styles.textHari}>HST</Text>
+                </View>
+              </View>
             </View>
-            <Image
-              source={require('../../../components/images/monitoringImage/monitoringDay.png')}
-              resizeMode="contain"
-              style={styles.dayNightImage}
+            <View style={styles.monitoringNumContainer}>
+              <View style={[styles.lineCenter, styles.lineVertical]} />
+              <View style={[styles.lineCenter, styles.lineHorizontal]} />
+              <View style={styles.insideMonitoringContainer}>
+                <View style={styles.dividerMonitoringContainer}>
+                  <View style={styles.miniMonitoringContainer}>
+                    <Text style={styles.monitoringText}>Suhu Tanah</Text>
+                    <View style={styles.svgWrapper}>
+                      <MonitoringCircleSvg
+                        fill="#D9D9D9"
+                        style={styles.absolutePosition}
+                      />
+                      <Text style={styles.monitoringNumber}>{suhu}</Text>
+                      <Text style={styles.monitoringUnit}>°C</Text>
+                    </View>
+                  </View>
+                  <View style={styles.miniMonitoringContainer}>
+                    <Text style={styles.monitoringText}>Kelembapan</Text>
+                    <View style={styles.svgWrapper}>
+                      <MonitoringCircleSvg
+                        fill="#D9D9D9"
+                        style={styles.absolutePosition}
+                      />
+                      <Text style={styles.monitoringNumber}>{kelembapan}</Text>
+                      <Text style={styles.monitoringUnit}>%</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.dividerMonitoringContainer}>
+                  <View style={styles.miniMonitoringContainer}>
+                    <Text style={styles.monitoringText}>pH</Text>
+                    <View style={styles.svgWrapper}>
+                      <MonitoringCircleSvg
+                        fill="#D9D9D9"
+                        style={styles.absolutePosition}
+                      />
+                      <Text style={styles.monitoringNumber}>{ph}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.miniMonitoringContainer}>
+                    <Text style={styles.monitoringText}>NPK</Text>
+                    <View style={styles.tripleNPKContainer}>
+                      <View style={styles.tripleNPKNitrogen}>
+                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                          Nitrogen
+                        </Text>
+                        <View style={styles.numberNPKCircle}>
+                          <MonitoringCircleSvg
+                            fill="#D9D9D9"
+                            style={styles.absolutePosition}
+                          />
+                          <Text style={styles.numberNPKText}>{nitrogen}</Text>
+                        </View>
+                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                          ppm
+                        </Text>
+                      </View>
+                      <View
+                        style={[styles.tripleNPKKaliumPhosphor, {left: '3%'}]}>
+                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                          Kalium
+                        </Text>
+                        <View style={styles.numberNPKCircle}>
+                          <MonitoringCircleSvg
+                            fill="#D9D9D9"
+                            style={styles.absolutePosition}
+                          />
+                          <Text style={styles.numberNPKText}>{kalium}</Text>
+                        </View>
+                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                          ppm
+                        </Text>
+                      </View>
+                      <View
+                        style={[styles.tripleNPKKaliumPhosphor, {right: '3%'}]}>
+                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                          Phosphor
+                        </Text>
+                        <View style={styles.numberNPKCircle}>
+                          <MonitoringCircleSvg
+                            fill="#D9D9D9"
+                            style={styles.absolutePosition}
+                          />
+                          <Text style={styles.numberNPKText}>{phosphor}</Text>
+                        </View>
+                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                          ppm
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </ImageBackground>
+        </View>
+        <Modal visible={modalVisible} animationType="slide">
+          <View style={styles.modalContainer}>
+            <LocationSearch
+              onSelect={handleLocationSelect}
+              onChangeQuery={setIsTyping}
             />
-            <View style={styles.topMonitoring}>
-              <Text style={styles.textUsiaTanam}>Usia Tanam :</Text>
-              <View style={styles.textUsiaTanamHari}>
-                <Text style={styles.textJumlahHari}>120</Text>
-                <Text style={styles.textHari}>HST</Text>
-              </View>
-            </View>
+            {!isTyping && (
+              <Button
+                title="Cancel"
+                color={Color.PRIMARY}
+                onPress={() => {
+                  setIsTyping(false);
+                  setModalVisible(false);
+                  Keyboard.dismiss();
+                }}
+              />
+            )}
           </View>
-          <View style={styles.monitoringNumContainer}>
-            <View style={[styles.lineCenter, styles.lineVertical]} />
-            <View style={[styles.lineCenter, styles.lineHorizontal]} />
-            <View style={styles.insideMonitoringContainer}>
-              <View style={styles.dividerMonitoringContainer}>
-                <View style={styles.miniMonitoringContainer}>
-                  <Text style={styles.monitoringText}>Suhu Tanah</Text>
-                  <View style={styles.svgWrapper}>
-                    <MonitoringCircleSvg
-                      fill="#D9D9D9"
-                      style={styles.absolutePosition}
-                    />
-                    <Text style={styles.monitoringNumber}>35</Text>
-                    <Text style={styles.monitoringUnit}>°C</Text>
-                  </View>
-                </View>
-                <View style={styles.miniMonitoringContainer}>
-                  <Text style={styles.monitoringText}>Kelembapan</Text>
-                  <View style={styles.svgWrapper}>
-                    <MonitoringCircleSvg
-                      fill="#D9D9D9"
-                      style={styles.absolutePosition}
-                    />
-                    <Text style={styles.monitoringNumber}>80</Text>
-                    <Text style={styles.monitoringUnit}>%</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.dividerMonitoringContainer}>
-                <View style={styles.miniMonitoringContainer}>
-                  <Text style={styles.monitoringText}>pH</Text>
-                  <View style={styles.svgWrapper}>
-                    <MonitoringCircleSvg
-                      fill="#D9D9D9"
-                      style={styles.absolutePosition}
-                    />
-                    <Text style={styles.monitoringNumber}>6.5</Text>
-                  </View>
-                </View>
-                <View style={styles.miniMonitoringContainer}>
-                  <Text style={styles.monitoringText}>NPK</Text>
-                  <View style={styles.tripleNPKContainer}>
-                    <View style={styles.tripleNPKNitrogen}>
-                      <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                        Nitrogen
-                      </Text>
-                      <View style={styles.numberNPKCircle}>
-                        <MonitoringCircleSvg
-                          fill="#D9D9D9"
-                          style={styles.absolutePosition}
-                        />
-                        <Text style={styles.numberNPKText}>225</Text>
-                      </View>
-                      <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                        ppm
-                      </Text>
-                    </View>
-                    <View
-                      style={[styles.tripleNPKKaliumPhosphor, {left: '3%'}]}>
-                      <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                        Kalium
-                      </Text>
-                      <View style={styles.numberNPKCircle}>
-                        <MonitoringCircleSvg
-                          fill="#D9D9D9"
-                          style={styles.absolutePosition}
-                        />
-                        <Text style={styles.numberNPKText}>225</Text>
-                      </View>
-                      <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                        ppm
-                      </Text>
-                    </View>
-                    <View
-                      style={[styles.tripleNPKKaliumPhosphor, {right: '3%'}]}>
-                      <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                        Phosphor
-                      </Text>
-                      <View style={styles.numberNPKCircle}>
-                        <MonitoringCircleSvg
-                          fill="#D9D9D9"
-                          style={styles.absolutePosition}
-                        />
-                        <Text style={styles.numberNPKText}>2000</Text>
-                      </View>
-                      <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                        ppm
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </ImageBackground>
+        </Modal>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -146,10 +367,9 @@ const styles = StyleSheet.create({
   },
   viewContainer: {
     marginTop: hp('-2%'),
-    flex: 1,
+    height: hp('100%'),
+    width: wp('100%'),
     alignItems: 'center',
-    // borderColor: 'blue',
-    // borderWidth: 2,
   },
   topMonitoring: {
     height: '65%',
@@ -204,12 +424,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     flexDirection: 'row',
     paddingHorizontal: wp('6%'),
-    // borderColor: 'black',
-    // borderWidth: 1,
   },
   monitoringNumContainer: {
     top: hp('2.2%'),
-    width: wp('87 %'),
+    width: wp('87%'),
     height: hp('55%'),
     alignSelf: 'center',
     backgroundColor: Color.GREENMONITORINGALL,
@@ -237,8 +455,6 @@ const styles = StyleSheet.create({
   insideMonitoringContainer: {
     height: '100%',
     width: '100%',
-    // borderColor: 'white',
-    // borderWidth: 1,
   },
   dividerMonitoringContainer: {
     height: '50%',
@@ -249,8 +465,6 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '50%',
     alignItems: 'center',
-    // borderColor: 'orange',
-    // borderWidth: 1,
   },
   svgWrapper: {
     top: '17%',
@@ -259,8 +473,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '80%',
     height: '60%',
-    // borderColor: 'orange',
-    // borderWidth: 1,
   },
   monitoringText: {
     top: '8%',
@@ -290,23 +502,17 @@ const styles = StyleSheet.create({
     top: '10%',
     width: '95%',
     height: '70%',
-    // borderColor: 'orange',
-    // borderWidth: 1,
   },
   tripleNPKNitrogen: {
     width: '40%',
     height: '50%',
     alignSelf: 'center',
-    // borderColor: 'white',
-    // borderWidth: 1,
   },
   NPKText: {
     fontFamily: FontFamily.poppinsMedium,
     color: 'white',
     textAlign: 'center',
     paddingBottom: '5%',
-    // borderColor: 'black',
-    // borderWidth: 1,
   },
   numberNPKCircle: {
     width: '100%',
@@ -314,8 +520,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    // borderColor: 'orange',
-    // borderWidth: 1,
   },
   numberNPKText: {
     width: '95%',
@@ -329,8 +533,6 @@ const styles = StyleSheet.create({
     bottom: '-4%',
     width: '40%',
     height: '50%',
-    // borderColor: 'white',
-    // borderWidth: 1,
     position: 'absolute',
   },
   dayNightImage: {
@@ -343,8 +545,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
-    // borderColor: 'black',
-    // borderWidth: 1,
   },
   topText: {
     width: '90%',
@@ -354,28 +554,12 @@ const styles = StyleSheet.create({
     marginLeft: '1.5%',
     fontSize: hp('1.45%'),
   },
-  // BottomSheet
-  containerz: {
+  modalContainer: {
     flex: 1,
-  },
-  sheetContent: {
-    flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  dragIndicator: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#ccc',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginVertical: 10,
-  },
-  item: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    alignItems: 'center',
+    backgroundColor: 'white',
   },
 });
 
-export default Monitoring;
+export default MonitoringScreen;
