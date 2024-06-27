@@ -215,7 +215,6 @@ const MonitoringScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView>
       <View style={styles.viewContainer}>
-        <BottomSheets weatherData={weatherData} selectedLocation={location} />
         <View style={styles.monitoringContainer}>
           <ImageBackground
             source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
@@ -337,6 +336,7 @@ const MonitoringScreen: React.FC = () => {
             </View>
           </ImageBackground>
         </View>
+        <BottomSheets weatherData={weatherData} selectedLocation={location} />
         <Modal visible={modalVisible} animationType="slide">
           <View style={styles.modalContainer}>
             <LocationSearch
