@@ -87,7 +87,7 @@ const MasaTanamScreen: React.FC = () => {
     } else {
       if (
         newDates.startDate.length === 0 ||
-        (newDates.harvestDate.length > 0 &&
+        (newDates.harvestDate.length >= 0 &&
           newDates.startDate.length === newDates.harvestDate.length)
       ) {
         newDates.startDate.push(selectedDate);
