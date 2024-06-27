@@ -5,12 +5,19 @@ import Login from '../pages/authScreen/Login';
 import Register from '../pages/authScreen/Register';
 import Monitoring from '../pages/appScreen/monitoringScreen/MonitoringScreen';
 
-const Stack = createStackNavigator();
+type StackParamList = {
+  Splash: undefined;
+  Login: undefined;
+  Register: undefined;
+  Monitoring: undefined;
+};
 
-const AuthStackNav = () => {
+const Stack = createStackNavigator<StackParamList>();
+
+const AuthStackNav: React.FC = () => {
   return (
     <Stack.Navigator
-      initialRouteName="FirstNavigation"
+      initialRouteName="Splash"
       screenOptions={{
         ...TransitionPresets.SlideFromRightIOS,
         headerShown: false,
