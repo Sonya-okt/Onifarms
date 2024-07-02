@@ -10,6 +10,7 @@ import {
   Button,
   Keyboard,
   KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -25,6 +26,7 @@ import LocationSearch, {
 } from '../../../components/api/OpenWeather';
 import {EventRegister} from 'react-native-event-listeners';
 import database from '@react-native-firebase/database';
+import {FlatList} from 'react-native-gesture-handler';
 
 const MonitoringScreen: React.FC = () => {
   const [dayNightImage, setDayNightImage] = useState(
@@ -213,150 +215,177 @@ const MonitoringScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView>
-      <View style={styles.viewContainer}>
-        <View style={styles.monitoringContainer}>
-          <ImageBackground
-            source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
-            resizeMode="cover"
-            style={styles.sawahField}>
-            <View style={styles.topLocationMasaTanam}>
-              <TouchableOpacity
-                style={styles.topLocation}
-                onPress={() => setModalVisible(true)}>
-                <MonitoringMarkerLoc />
-                <Text style={styles.topText}>{location}</Text>
-              </TouchableOpacity>
-              <Image
-                source={dayNightImage}
-                resizeMode="contain"
-                style={styles.dayNightImage}
-              />
-              <View style={styles.topMonitoring}>
-                <Text style={styles.textUsiaTanam}>Usia Tanam :</Text>
-                <View style={styles.textUsiaTanamHari}>
-                  <Text style={styles.textJumlahHari}>{jumlahHari}</Text>
-                  <Text style={styles.textHari}>HST</Text>
+    <KeyboardAvoidingView style={{marginTop: hp('-2.3%')}}>
+      <FlatList
+        data={[]}
+        renderItem={() => null}
+        ListHeaderComponent={
+          <View style={styles.viewContainer}>
+            <View style={styles.monitoringContainer}>
+              <ImageBackground
+                source={require('../../../components/images/monitoringImage/monitoringFieldImage.png')}
+                resizeMode="cover"
+                style={styles.sawahField}>
+                <View style={styles.topLocationMasaTanam}>
+                  <TouchableOpacity
+                    style={styles.topLocation}
+                    onPress={() => setModalVisible(true)}>
+                    <MonitoringMarkerLoc />
+                    <Text style={styles.topText}>{location}</Text>
+                  </TouchableOpacity>
+                  <Image
+                    source={dayNightImage}
+                    resizeMode="contain"
+                    style={styles.dayNightImage}
+                  />
+                  <View style={styles.topMonitoring}>
+                    <Text style={styles.textUsiaTanam}>Usia Tanam :</Text>
+                    <View style={styles.textUsiaTanamHari}>
+                      <Text style={styles.textJumlahHari}>{jumlahHari}</Text>
+                      <Text style={styles.textHari}>HST</Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
+                <View style={styles.monitoringNumContainer}>
+                  <View style={[styles.lineCenter, styles.lineVertical]} />
+                  <View style={[styles.lineCenter, styles.lineHorizontal]} />
+                  <View style={styles.insideMonitoringContainer}>
+                    <View style={styles.dividerMonitoringContainer}>
+                      <View style={styles.miniMonitoringContainer}>
+                        <Text style={styles.monitoringText}>Suhu Tanah</Text>
+                        <View style={styles.svgWrapper}>
+                          <MonitoringCircleSvg
+                            fill="#D9D9D9"
+                            style={styles.absolutePosition}
+                          />
+                          <Text style={styles.monitoringNumber}>{suhu}</Text>
+                          <Text style={styles.monitoringUnit}>°C</Text>
+                        </View>
+                      </View>
+                      <View style={styles.miniMonitoringContainer}>
+                        <Text style={styles.monitoringText}>Kelembapan</Text>
+                        <View style={styles.svgWrapper}>
+                          <MonitoringCircleSvg
+                            fill="#D9D9D9"
+                            style={styles.absolutePosition}
+                          />
+                          <Text style={styles.monitoringNumber}>
+                            {kelembapan}
+                          </Text>
+                          <Text style={styles.monitoringUnit}>%</Text>
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.dividerMonitoringContainer}>
+                      <View style={styles.miniMonitoringContainer}>
+                        <Text style={styles.monitoringText}>pH</Text>
+                        <View style={styles.svgWrapper}>
+                          <MonitoringCircleSvg
+                            fill="#D9D9D9"
+                            style={styles.absolutePosition}
+                          />
+                          <Text style={styles.monitoringNumber}>{ph}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.miniMonitoringContainer}>
+                        <Text style={styles.monitoringText}>NPK</Text>
+                        <View style={styles.tripleNPKContainer}>
+                          <View style={styles.tripleNPKNitrogen}>
+                            <Text
+                              style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                              Nitrogen
+                            </Text>
+                            <View style={styles.numberNPKCircle}>
+                              <MonitoringCircleSvg
+                                fill="#D9D9D9"
+                                style={styles.absolutePosition}
+                              />
+                              <Text style={styles.numberNPKText}>
+                                {nitrogen}
+                              </Text>
+                            </View>
+                            <Text
+                              style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                              ppm
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.tripleNPKKaliumPhosphor,
+                              {left: '3%'},
+                            ]}>
+                            <Text
+                              style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                              Kalium
+                            </Text>
+                            <View style={styles.numberNPKCircle}>
+                              <MonitoringCircleSvg
+                                fill="#D9D9D9"
+                                style={styles.absolutePosition}
+                              />
+                              <Text style={styles.numberNPKText}>{kalium}</Text>
+                            </View>
+                            <Text
+                              style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                              ppm
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.tripleNPKKaliumPhosphor,
+                              {right: '3%'},
+                            ]}>
+                            <Text
+                              style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
+                              Phosphor
+                            </Text>
+                            <View style={styles.numberNPKCircle}>
+                              <MonitoringCircleSvg
+                                fill="#D9D9D9"
+                                style={styles.absolutePosition}
+                              />
+                              <Text style={styles.numberNPKText}>
+                                {phosphor}
+                              </Text>
+                            </View>
+                            <Text
+                              style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
+                              ppm
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </ImageBackground>
             </View>
-            <View style={styles.monitoringNumContainer}>
-              <View style={[styles.lineCenter, styles.lineVertical]} />
-              <View style={[styles.lineCenter, styles.lineHorizontal]} />
-              <View style={styles.insideMonitoringContainer}>
-                <View style={styles.dividerMonitoringContainer}>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>Suhu Tanah</Text>
-                    <View style={styles.svgWrapper}>
-                      <MonitoringCircleSvg
-                        fill="#D9D9D9"
-                        style={styles.absolutePosition}
-                      />
-                      <Text style={styles.monitoringNumber}>{suhu}</Text>
-                      <Text style={styles.monitoringUnit}>°C</Text>
-                    </View>
-                  </View>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>Kelembapan</Text>
-                    <View style={styles.svgWrapper}>
-                      <MonitoringCircleSvg
-                        fill="#D9D9D9"
-                        style={styles.absolutePosition}
-                      />
-                      <Text style={styles.monitoringNumber}>{kelembapan}</Text>
-                      <Text style={styles.monitoringUnit}>%</Text>
-                    </View>
-                  </View>
-                </View>
-                <View style={styles.dividerMonitoringContainer}>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>pH</Text>
-                    <View style={styles.svgWrapper}>
-                      <MonitoringCircleSvg
-                        fill="#D9D9D9"
-                        style={styles.absolutePosition}
-                      />
-                      <Text style={styles.monitoringNumber}>{ph}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.miniMonitoringContainer}>
-                    <Text style={styles.monitoringText}>NPK</Text>
-                    <View style={styles.tripleNPKContainer}>
-                      <View style={styles.tripleNPKNitrogen}>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                          Nitrogen
-                        </Text>
-                        <View style={styles.numberNPKCircle}>
-                          <MonitoringCircleSvg
-                            fill="#D9D9D9"
-                            style={styles.absolutePosition}
-                          />
-                          <Text style={styles.numberNPKText}>{nitrogen}</Text>
-                        </View>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                          ppm
-                        </Text>
-                      </View>
-                      <View
-                        style={[styles.tripleNPKKaliumPhosphor, {left: '3%'}]}>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                          Kalium
-                        </Text>
-                        <View style={styles.numberNPKCircle}>
-                          <MonitoringCircleSvg
-                            fill="#D9D9D9"
-                            style={styles.absolutePosition}
-                          />
-                          <Text style={styles.numberNPKText}>{kalium}</Text>
-                        </View>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                          ppm
-                        </Text>
-                      </View>
-                      <View
-                        style={[styles.tripleNPKKaliumPhosphor, {right: '3%'}]}>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.3%')}]}>
-                          Phosphor
-                        </Text>
-                        <View style={styles.numberNPKCircle}>
-                          <MonitoringCircleSvg
-                            fill="#D9D9D9"
-                            style={styles.absolutePosition}
-                          />
-                          <Text style={styles.numberNPKText}>{phosphor}</Text>
-                        </View>
-                        <Text style={[styles.NPKText, {fontSize: hp('1.15%')}]}>
-                          ppm
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </ImageBackground>
-        </View>
-        <BottomSheets weatherData={weatherData} selectedLocation={location} />
-        <Modal visible={modalVisible} animationType="slide">
-          <View style={styles.modalContainer}>
-            <LocationSearch
-              onSelect={handleLocationSelect}
-              onChangeQuery={setIsTyping}
-            />
-            {!isTyping && (
-              <Button
-                title="Cancel"
-                color={Color.PRIMARY}
-                onPress={() => {
-                  setIsTyping(false);
-                  setModalVisible(false);
-                  Keyboard.dismiss();
-                }}
-              />
-            )}
           </View>
-        </Modal>
-      </View>
+        }
+        ListFooterComponent={
+          <BottomSheets weatherData={weatherData} selectedLocation={location} />
+        }
+        contentContainerStyle={styles.contentContainerStyle}
+      />
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <LocationSearch
+            onSelect={handleLocationSelect}
+            onChangeQuery={setIsTyping}
+          />
+          {!isTyping && (
+            <Button
+              title="Cancel"
+              color={Color.PRIMARY}
+              onPress={() => {
+                setIsTyping(false);
+                setModalVisible(false);
+                Keyboard.dismiss();
+              }}
+            />
+          )}
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -366,9 +395,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   viewContainer: {
-    marginTop: hp('-2%'),
-    height: hp('100%'),
+    height: 'auto',
     width: wp('100%'),
+    marginTop: hp('0.5%'),
+  },
+  contentContainerStyle: {
     alignItems: 'center',
   },
   topMonitoring: {

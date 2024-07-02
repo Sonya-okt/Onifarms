@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {useState, useEffect} from 'react';
 import {
   StyleSheet,
@@ -18,19 +17,16 @@ import {
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
-import firestore from '@react-native-firebase/firestore';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import Toast from 'react-native-toast-message';
-import {Row, Table, Cell} from 'react-native-table-component';
+import database from '@react-native-firebase/database';
 
 interface DataRecord {
   date: string;
-  temperature: string;
-  humidity: string;
-  pH: string;
-  n: string;
-  p: string;
-  k: string;
+  temperature: number;
+  humidity: number;
+  pH: number;
+  n: number;
+  p: number;
+  k: number;
 }
 
 const ItemComponent: React.FC<{item: DataRecord}> = ({item}) => {
@@ -40,70 +36,122 @@ const ItemComponent: React.FC<{item: DataRecord}> = ({item}) => {
         {item.date}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.temperature}
+        {item.temperature.toString()}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('15%')}]}>
-        {item.humidity}
+        {item.humidity.toString()}
       </Text>
-      <Text style={[styles.dataTableText, {width: wp('11%')}]}>{item.pH}</Text>
-      <Text style={[styles.dataTableText, {width: wp('11%')}]}>{item.n}</Text>
-      <Text style={[styles.dataTableText, {width: wp('11%')}]}>{item.p}</Text>
-      <Text style={[styles.dataTableText, {width: wp('11%')}]}>{item.k}</Text>
+      <Text style={[styles.dataTableText, {width: wp('11%')}]}>
+        {item.pH.toString()}
+      </Text>
+      <Text style={[styles.dataTableText, {width: wp('11%')}]}>
+        {item.n.toString()}
+      </Text>
+      <Text style={[styles.dataTableText, {width: wp('11%')}]}>
+        {item.p.toString()}
+      </Text>
+      <Text style={[styles.dataTableText, {width: wp('11%')}]}>
+        {item.k.toString()}
+      </Text>
     </View>
   );
 };
 
 const DataRecordScreen: React.FC = () => {
-  const [data, setData] = useState<DataRecord[]>([
-    {
-      date: '2024-06-01',
-      temperature: '25',
-      humidity: '60',
-      pH: '4.5',
-      n: '10',
-      p: '5',
-      k: '20',
-    },
-    {
-      date: '2024-06-02',
-      temperature: '26',
-      humidity: '65',
-      pH: '4.6',
-      n: '500',
-      p: '500',
-      k: '500',
-    },
-  ]);
+  const [data, setData] = useState<DataRecord[]>([]);
   const [fromDate, setFromDate] = useState<Date>(new Date());
   const [toDate, setToDate] = useState<Date>(new Date());
   const [showFromDatePicker, setShowFromDatePicker] = useState<boolean>(false);
   const [showToDatePicker, setShowToDatePicker] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [downloading, setDownloading] = useState<boolean>(false);
 
   const tableHead = ['Tanggal', 'Suhu', 'Kelembapan', 'pH', 'N', 'P', 'K'];
-  const widthArr: number[] = [
-    wp('20%'),
-    wp('11%'),
-    wp('15%'),
-    wp('11%'),
-    wp('11%'),
-    wp('11%'),
-    wp('11%'),
-  ];
+
+  const currentData: {[key: string]: {sum: number; count: number}} = {
+    temperature: {sum: 0, count: 0},
+    humidity: {sum: 0, count: 0},
+    pH: {sum: 0, count: 0},
+    n: {sum: 0, count: 0},
+    p: {sum: 0, count: 0},
+    k: {sum: 0, count: 0},
+  };
+  let currentDate = new Date().toISOString().split('T')[0];
+
+  const resetCurrentData = () => {
+    currentData.temperature.sum = 0;
+    currentData.temperature.count = 0;
+    currentData.humidity.sum = 0;
+    currentData.humidity.count = 0;
+    currentData.pH.sum = 0;
+    currentData.pH.count = 0;
+    currentData.n.sum = 0;
+    currentData.n.count = 0;
+    currentData.p.sum = 0;
+    currentData.p.count = 0;
+    currentData.k.sum = 0;
+    currentData.k.count = 0;
+  };
+
+  const calculateAndSaveAverage = async () => {
+    const timestamp = new Date().getTime();
+    const temperature =
+      currentData.temperature.count > 0
+        ? currentData.temperature.sum / currentData.temperature.count
+        : 0;
+    const humidity =
+      currentData.humidity.count > 0
+        ? currentData.humidity.sum / currentData.humidity.count
+        : 0;
+    const pH =
+      currentData.pH.count > 0 ? currentData.pH.sum / currentData.pH.count : 0;
+    const n =
+      currentData.n.count > 0 ? currentData.n.sum / currentData.n.count : 0;
+    const p =
+      currentData.p.count > 0 ? currentData.p.sum / currentData.p.count : 0;
+    const k =
+      currentData.k.count > 0 ? currentData.k.sum / currentData.k.count : 0;
+
+    try {
+      await database().ref(`1002/DataRecord/${timestamp}`).set({
+        suhu: temperature,
+        kelembapan: humidity,
+        ph: pH,
+        nitrogen: n,
+        phosphor: p,
+        kalium: k,
+      });
+
+      console.log(`Data berhasil disimpan dengan timestamp: ${timestamp}`);
+    } catch (error) {
+      console.error('Error saving data: ', error);
+    }
+  };
 
   const fetchData = async (fromDate: Date, toDate: Date) => {
     setLoading(true);
     try {
-      const snapshot = await firestore()
-        .collection('OnifarmDatabase')
-        .doc('1001')
-        .collection('data')
-        .where('date', '>=', fromDate.toISOString())
-        .where('date', '<=', toDate.toISOString())
-        .get();
-      const fetchedData = snapshot.docs.map(doc => doc.data() as DataRecord);
-      setData(fetchedData);
+      const snapshot = await database()
+        .ref('1002/DataRecord')
+        .orderByKey()
+        .once('value');
+      const fetchedData = snapshot.val();
+      const dataList: DataRecord[] = [];
+      for (const key in fetchedData) {
+        const recordDate = new Date(parseInt(key));
+        if (recordDate >= fromDate && recordDate <= toDate) {
+          dataList.push({
+            date: recordDate.toISOString().split('T')[0],
+            temperature: fetchedData[key].suhu,
+            humidity: fetchedData[key].kelembapan,
+            pH: fetchedData[key].ph,
+            n: fetchedData[key].nitrogen,
+            p: fetchedData[key].phosphor,
+            k: fetchedData[key].kalium,
+          });
+        }
+      }
+      setData(dataList);
+      console.log('Data rata-rata berhasil ditampilkan di UI');
     } catch (error) {
       console.error('Error fetching data: ', error);
       Alert.alert('Error', 'Failed to fetch data from database.');
@@ -145,27 +193,44 @@ const DataRecordScreen: React.FC = () => {
     }
     fetchData(fromDate, toDate);
   };
-  const generatePDF = async () => {
-    setDownloading(true);
-    try {
-      const options = {
-        html: '<h1>Data Record</h1>',
-        fileName: 'DataRecord',
-        directory: 'Documents',
-      };
-      const file = await RNHTMLtoPDF.convert(options);
-      Toast.show({
-        type: 'success',
-        text1: 'PDF Generated',
-        text2: 'PDF has been saved to ' + file.filePath,
-      });
-    } catch (error) {
-      console.error('Error generating PDF: ', error);
-      Alert.alert('Error', 'Failed to generate PDF.');
-    } finally {
-      setDownloading(false);
-    }
-  };
+
+  useEffect(() => {
+    const ref = database().ref('1002/Average');
+
+    const updateData = async () => {
+      try {
+        const snapshot = await ref.once('value');
+        const fetchedData = snapshot.val();
+        const newDate = new Date().toISOString().split('T')[0];
+        if (newDate !== currentDate) {
+          await calculateAndSaveAverage();
+          resetCurrentData();
+          currentDate = newDate;
+        }
+        currentData.temperature.sum += parseFloat(fetchedData.suhu);
+        currentData.temperature.count += 1;
+        currentData.humidity.sum += parseFloat(fetchedData.kelembapan);
+        currentData.humidity.count += 1;
+        currentData.pH.sum += parseFloat(fetchedData.ph);
+        currentData.pH.count += 1;
+        currentData.n.sum += parseFloat(fetchedData.nitrogen);
+        currentData.n.count += 1;
+        currentData.p.sum += parseFloat(fetchedData.phosphor);
+        currentData.p.count += 1;
+        currentData.k.sum += parseFloat(fetchedData.kalium);
+        currentData.k.count += 1;
+      } catch (error) {
+        console.error('Error updating data: ', error);
+      }
+    };
+
+    const intervalId = setInterval(updateData, 600000); // Set interval to 10 minutes (600000 milliseconds)
+
+    return () => {
+      clearInterval(intervalId);
+      ref.off();
+    };
+  }, []);
 
   return (
     <LinearGradient
@@ -184,7 +249,6 @@ const DataRecordScreen: React.FC = () => {
               <Text style={styles.dateFromText}>
                 {fromDate.toLocaleDateString()}
               </Text>
-              {/* Teks diatas Dapat memilih tanggal */}
             </TouchableOpacity>
           </View>
           <View>
@@ -195,7 +259,6 @@ const DataRecordScreen: React.FC = () => {
               <Text style={styles.dateFromText}>
                 {toDate.toLocaleDateString()}
               </Text>
-              {/* Teks diatas Dapat memilih tanggal */}
             </TouchableOpacity>
           </View>
           <TouchableOpacity style={styles.filterButton} onPress={filterData}>
@@ -203,24 +266,34 @@ const DataRecordScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
         <View style={styles.tableContainer}>
-          {/* Berisi tabel dengan judul 'Tanggal, Suhu, Kelembapan, N, P, K' */}
-          <Table style={styles.tableStyle}>
-            <Row
-              data={tableHead}
-              style={styles.headTable}
-              textStyle={styles.headText}
-              widthArr={widthArr}
+          <View style={styles.headerContainer}>
+            {tableHead.map((header, index) => (
+              <Text
+                key={index}
+                style={[
+                  styles.headText,
+                  {
+                    width: wp(
+                      ['20%', '10%', '17.5%', '8.5%', '11%', '11%', '11%'][
+                        index
+                      ],
+                    ),
+                  },
+                ]}>
+                {header}
+              </Text>
+            ))}
+          </View>
+          {loading ? (
+            <ActivityIndicator size="large" color={Color.PRIMARY} />
+          ) : (
+            <FlatList
+              data={data}
+              keyExtractor={(_item, index) => index.toString()}
+              renderItem={({item}) => <ItemComponent item={item} />}
             />
-          </Table>
-          <FlatList
-            data={data}
-            keyExtractor={(_item, index) => index.toString()}
-            renderItem={({item}) => <ItemComponent item={item} />}
-          />
+          )}
         </View>
-        <TouchableOpacity style={styles.downloadbutton} onPress={generatePDF}>
-          <Text style={styles.textDownloadButton}>Download pdf</Text>
-        </TouchableOpacity>
       </View>
       {showFromDatePicker && (
         <DateTimePicker
@@ -249,8 +322,6 @@ const styles = StyleSheet.create({
     height: hp('100%'),
     width: wp('100%'),
     paddingTop: hp('5%'),
-    // borderWidth: wp('0.1%'),
-    // borderColor: Color.PRIMARY,
   },
   linearGradient: {
     flex: 1,
@@ -320,52 +391,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  downloadbutton: {
-    backgroundColor: Color.PRIMARY,
-    borderRadius: wp('4%'),
-    width: wp('30%'),
-    height: hp('5%'),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: hp('3%'),
-    alignSelf: 'center',
-  },
-  textDownloadButton: {
-    fontFamily: FontFamily.poppinsMedium,
-    fontSize: wp('3.4%'),
-    color: Color.WHITE,
-  },
-  tableStyle: {
+  headerContainer: {
+    flexDirection: 'row',
     width: '100%',
-    alignSelf: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#cccc',
     backgroundColor: Color.PRIMARY,
-    justifyContent: 'space-between',
-  },
-  headTable: {
-    height: hp('3.5%'),
-    justifyContent: 'space-between',
   },
   headText: {
     fontFamily: FontFamily.poppinsMedium,
-    fontSize: 8,
+    fontSize: wp('2%'),
     color: Color.WHITE,
     textAlign: 'center',
-    // borderWidth: wp('0.1%'),
-    // borderColor: Color.WHITE,
-  },
-  textTable: {
-    fontFamily: FontFamily.poppinsRegular,
-    fontSize: 10,
-    color: Color.BLACK,
-    textAlign: 'center',
+    padding: hp('1%'),
   },
   dataTableText: {
     color: Color.BLACK,
-    height: '100%',
     fontFamily: FontFamily.poppinsRegular,
     fontSize: wp('3%'),
-    // borderWidth: wp('0.1%'),
-    // borderColor: Color.PRIMARY,
     textAlign: 'center',
   },
 });

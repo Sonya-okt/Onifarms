@@ -3,7 +3,6 @@ import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import Splash from '../pages/welcomeScreen/Splash';
 import Login from '../pages/authScreen/Login';
 import Register from '../pages/authScreen/Register';
-import Monitoring from '../pages/appScreen/monitoringScreen/MonitoringScreen';
 
 type StackParamList = {
   Splash: undefined;
@@ -25,7 +24,6 @@ const AuthStackNav: React.FC = () => {
       <Stack.Screen name="Splash" component={Splash} />
       <Stack.Screen name="Login" component={Login} />
       <Stack.Screen name="Register" component={Register} />
-      <Stack.Screen name="Monitoring" component={Monitoring} />
     </Stack.Navigator>
   );
 };

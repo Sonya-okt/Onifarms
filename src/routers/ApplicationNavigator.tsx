@@ -4,15 +4,14 @@ import {View, Text} from 'react-native';
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import MainAppNavigator from './MainAppNavigator';
-import {MonitoringProvider} from '../components/api/contextApi/MonitoringKesuburanContext';
+import AuthNavigator from './AuthNavigator';
 
 const ApplicationNavigator = () => {
   return (
-    <MonitoringProvider>
-      <NavigationContainer>
-        <MainAppNavigator />
-      </NavigationContainer>
-    </MonitoringProvider>
+    <NavigationContainer>
+      <AuthNavigator />
+      {/* <MainAppNavigator /> */}
+    </NavigationContainer>
   );
 };
 

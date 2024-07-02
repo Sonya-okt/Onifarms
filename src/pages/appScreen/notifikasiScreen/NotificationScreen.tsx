@@ -1,12 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, Text, View, Image, FlatList} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  FlatList,
+  PermissionsAndroid,
+  Alert,
+} from 'react-native';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
 } from 'react-native-responsive-screen';
 import LinearGradient from 'react-native-linear-gradient';
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
+import messaging from '@react-native-firebase/messaging';
 
 interface Notification {
   id: string;
@@ -17,7 +26,7 @@ interface Notification {
   date: string;
 }
 
-const NotificationScreen = () => {
+const NotificationScreen: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: '1',
@@ -37,6 +46,50 @@ const NotificationScreen = () => {
     },
     // Add more notifications as needed
   ]);
+
+  async function requestUserPermission() {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      console.log('Authorization status:', authStatus);
+    }
+  }
+
+  async function getToken() {
+    const fcmToken = await messaging().getToken();
+    console.log('fcmToken: ', fcmToken);
+  }
+
+  useEffect(() => {
+    async function requestPermissions() {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log('You can use the notifications');
+      } else {
+        console.log('Notification permission denied');
+      }
+    }
+
+    requestPermissions();
+    requestUserPermission();
+    getToken();
+
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      if (remoteMessage.notification) {
+        Alert.alert(
+          'A new FCM message arrived!',
+          remoteMessage.notification?.body,
+        );
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const renderItem = ({item}: {item: Notification}) => {
     return (
@@ -83,14 +136,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: hp('-2%'),
     paddingTop: hp('2%'),
-
     alignItems: 'center',
   },
   parentContainer: {
     width: wp('98%'),
     alignItems: 'center',
-    // borderColor: 'black',
-    // borderWidth: 0.5,
   },
   container: {
     width: wp('89%'),
@@ -111,8 +161,6 @@ const styles = StyleSheet.create({
     height: '80%',
     width: '13%',
     marginLeft: wp('1.2%'),
-    // borderColor: 'black',
-    // borderWidth: 1,
   },
   imageSize: {
     height: '100%',
@@ -138,16 +186,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: wp('1.5%'),
     paddingRight: wp('2.3%'),
-    // borderColor: 'black',
-    // borderWidth: 1,
   },
   timestampNotif: {
     height: '80%',
     width: '14%',
     flexDirection: 'column',
     justifyContent: 'center',
-    // borderColor: 'black',
-    // borderWidth: 1,
   },
   timeNotif: {
     textAlign: 'right',

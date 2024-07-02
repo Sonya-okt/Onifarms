@@ -86,19 +86,25 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
           try {
             const weatherResponse = await getWeather(locality);
             setWeatherData(weatherResponse);
-            onSelect(selectedLocation, weatherResponse);
+            onSelect({...selectedLocation}, {...weatherResponse});
             await AsyncStorage.setItem(
               'selectedLocation',
-              JSON.stringify(selectedLocation),
+              JSON.stringify({...selectedLocation}),
             );
+            await AsyncStorage.setItem(
+              'weatherData',
+              JSON.stringify({...weatherResponse}),
+            );
+            const storedWeatherData = await AsyncStorage.getItem('weatherData');
+            console.log('Stored Weather Data:', storedWeatherData);
           } catch (error) {
             console.error('Error fetching weather data:', error);
           }
         }
       };
 
-      fetchWeatherData(); // Fetch awal
-      intervalId = setInterval(fetchWeatherData, 600000); // Perbarui setiap 10 menit
+      fetchWeatherData();
+      intervalId = setInterval(fetchWeatherData, 600000);
     }
 
     return () => {
@@ -126,20 +132,30 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
   };
 
   const handleSelect = async (item: Location) => {
-    setSelectedLocation(item);
     const locality =
       item.address.village || item.address.town || item.address.city;
     if (locality) {
       try {
         const weatherData = await getWeather(locality);
-        setWeatherData(weatherData);
-        onSelect(item, weatherData);
+        setSelectedLocation({...item});
+        setWeatherData({...weatherData});
+        onSelect({...item}, {...weatherData});
+        await AsyncStorage.setItem(
+          'selectedLocation',
+          JSON.stringify({...item}),
+        );
+        await AsyncStorage.setItem(
+          'weatherData',
+          JSON.stringify({...weatherData}),
+        );
+        const storedWeatherData = await AsyncStorage.getItem('weatherData');
+        console.log('Stored Weather Data:', storedWeatherData);
       } catch (error) {
         console.error('Error fetching weather data:', error);
-        onSelect(item, null);
+        onSelect({...item}, null);
       }
     } else {
-      onSelect(item, null);
+      onSelect({...item}, null);
     }
   };
 

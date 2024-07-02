@@ -1,12 +1,21 @@
 import React, {useEffect} from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {FontFamily, Color} from '../../constants/GlobalStyles';
-import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
+import {
+  heightPercentageToDP as hp,
+  widthPercentageToDP as wp,
+} from 'react-native-responsive-screen';
 
-const Splash = () => {
-  const navigation = useNavigation();
+// Define the type for the navigation prop
+type RootStackParamList = {
+  Login: undefined;
+};
+
+const Splash: React.FC = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.navigate('Login');
@@ -23,14 +32,12 @@ const Splash = () => {
         colors={['#e0f8f0', '#ffff', '#9bd5b6']}
         useAngle={true}
         angle={168.99}>
-        <View style={[styles.logoOnifarmIconPosition]}>
-          <Image
-            style={[styles.logoOnifarmIcon]}
-            resizeMode="cover"
-            source={require('../../components/images/authImage/logoOnifarm.png')}
-          />
-        </View>
-        <Text style={[styles.byTimbawangUndip]}>by TimBawang_Undip</Text>
+        <Image
+          style={styles.logoOnifarmIcon}
+          resizeMode="contain"
+          source={require('../../components/images/authImage/logoOnifarm.png')}
+        />
+        <Text style={styles.byTimbawangUndip}>by TimBawang_Undip</Text>
       </LinearGradient>
     </View>
   );
@@ -45,19 +52,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoOnifarmIconPosition: {
-    marginTop: -35,
-  },
+
   logoOnifarmIcon: {
-    width: 259,
-    height: 313,
+    width: wp('70%'),
+    height: hp('40%'),
+    aspectRatio: 1,
+    marginBottom: hp('2%'),
   },
   byTimbawangUndip: {
-    bottom: hp('4 %'),
-    fontSize: 12,
-    fontFamily: FontFamily.poppinsMedium,
+    bottom: hp('4%'),
+    fontSize: wp('3%'),
+    fontFamily: FontFamily.poppinsRegular,
     color: Color.GREEN_BOTTOMNAV,
-    alignSelf: 'center',
     position: 'absolute',
   },
 });

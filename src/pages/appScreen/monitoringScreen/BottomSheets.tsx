@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useRef, useState, useEffect} from 'react';
+import React, {useCallback, useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -7,7 +7,6 @@ import {
   FlatList,
   Alert,
 } from 'react-native';
-import BottomSheet from '@gorhom/bottom-sheet';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   widthPercentageToDP as wp,
@@ -66,9 +65,6 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
   const [bendenganList, setBendenganList] = useState<number[]>([1]);
   const [currentWeatherData, setCurrentWeatherData] =
     useState<WeatherResponse | null>(weatherData);
-
-  const snapPoints = useMemo(() => ['31%', '98%'], []);
-  const bottomSheetRef = useRef<BottomSheet>(null);
 
   const handleSheetChanges = useCallback((index: number) => {
     console.log('handleSheetChanges', index);
@@ -180,88 +176,68 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
     setBendenganList([...bendenganList, bendenganList.length + 1]);
   };
 
-  const renderContent = () => (
-    <View style={StyleSheet.absoluteFill}>
-      <View style={styles.suhuContainer}>
-        <View>
-          <Text style={styles.titleText}>Suhu saat ini</Text>
-          <Text style={styles.tanggal}>{formatTanggal()}</Text>
-        </View>
-        <View style={{flexDirection: 'row'}}>
-          <Text style={styles.suhuUdara}>
-            {currentWeatherData
-              ? Math.round(currentWeatherData.main.temp)
-              : '--'}
-          </Text>
-          <Text style={styles.suhuUdara}>°C</Text>
-        </View>
-      </View>
-      <View style={styles.monitoringBendenganContainer}>
-        <View>
-          <Text style={styles.titleText}>Monitoring per Bendengan</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('MapScreen')}>
-            <Text style={styles.petaText}>Lihat peta</Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity onPress={addBendengan}>
-          <AddBendenganSvg />
-        </TouchableOpacity>
-      </View>
-      <FlatList
-        data={bendenganList}
-        keyExtractor={item => item.toString()}
-        renderItem={renderBendenganItem}
-      />
-    </View>
-  );
-
-  const renderBackground = useCallback(
-    () => (
-      <View style={StyleSheet.absoluteFill}>
-        <LinearGradient
-          style={styles.gradient}
-          colors={['#e0f8f0', '#fefefe', '#9bd5b6']}
-          start={{x: 0, y: -0.25}}
-          end={{x: 0.9, y: 0.8}}
-          locations={[0.1, 0.5, 1]}
-        />
-      </View>
-    ),
-    [openIndex],
-  );
-
   return (
     <View style={styles.container}>
-      <BottomSheet
-        ref={bottomSheetRef}
-        onChange={handleSheetChanges}
-        index={0}
-        snapPoints={snapPoints}
-        backgroundComponent={renderBackground}
-        style={styles.bottomSheet}>
-        {renderContent()}
-      </BottomSheet>
+      <LinearGradient
+        style={styles.gradient}
+        colors={['#e0f8f0', '#fefefe', '#bcddcb']}
+        start={{x: 0, y: -0.25}}
+        end={{x: 0.9, y: 0.8}}
+        locations={[0.1, 0.5, 1]}>
+        <View style={{}}>
+          <View style={styles.suhuContainer}>
+            <View>
+              <Text style={styles.titleText}>Suhu saat ini</Text>
+              <Text style={styles.tanggal}>{formatTanggal()}</Text>
+            </View>
+            <View style={{flexDirection: 'row'}}>
+              <Text style={styles.suhuUdara}>
+                {currentWeatherData
+                  ? Math.round(currentWeatherData.main.temp)
+                  : '--'}
+              </Text>
+              <Text style={styles.suhuUdara}>°C</Text>
+            </View>
+          </View>
+          <View style={styles.monitoringBendenganContainer}>
+            <View>
+              <Text style={styles.titleText}>Monitoring per Bendengan</Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('MapScreen')}>
+                <Text style={styles.petaText}>Lihat peta</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={addBendengan}>
+              <AddBendenganSvg />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <FlatList
+          data={bendenganList}
+          keyExtractor={item => item.toString()}
+          renderItem={renderBendenganItem}
+          contentContainerStyle={{paddingBottom: hp('12%')}} // Adding padding to avoid overlap
+        />
+      </LinearGradient>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    width: wp('100%'),
-    height: hp('100%'),
-    alignItems: 'center',
+    flex: 1,
     zIndex: 1,
     pointerEvents: 'box-none',
-  },
-  bottomSheet: {
-    zIndex: 1,
-    pointerEvents: 'box-none',
+    // borderWidth: 1,
+    // borderColor: Color.PRIMARY,
+    marginTop: hp('-4.5%'),
+    marginBottom: hp('2%'),
   },
   gradient: {
     flex: 1,
     borderRadius: wp('5%'),
     borderTopColor: '#E6E6E6',
+    paddingTop: hp('2%'),
   },
   suhuContainer: {
     height: hp('9.6%'),
