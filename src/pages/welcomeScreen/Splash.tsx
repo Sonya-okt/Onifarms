@@ -1,6 +1,7 @@
 import React, {useEffect} from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {FontFamily, Color} from '../../constants/GlobalStyles';
 import {
   heightPercentageToDP as hp,
@@ -8,8 +9,21 @@ import {
 } from 'react-native-responsive-screen';
 
 // Define the type for the navigation prop
+type RootStackParamList = {
+  Login: undefined;
+};
 
 const Splash: React.FC = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigation.navigate('Login');
+    }, 3000); // 3 detik
+
+    return () => clearTimeout(timer);
+  }, [navigation]);
+
   return (
     <View style={styles.container}>
       <LinearGradient

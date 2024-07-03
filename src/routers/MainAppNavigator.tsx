@@ -1,13 +1,5 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
-import {Color, FontFamily} from '../constants/GlobalStyles';
-import {
-  heightPercentageToDP as hp,
-  widthPercentageToDP as wp,
-} from 'react-native-responsive-screen';
 import BottomNavigator from './BottomNavigator';
 import MonitoringScreen from '../pages/appScreen/monitoringScreen/MonitoringScreen';
 import MapScreen from '../pages/appScreen/monitoringScreen/MapScreen';
@@ -16,22 +8,25 @@ import DataRecordScreen from '../pages/appScreen/pengaturanScreen/DataRecordScre
 import JadwalPenyiramanScreen from '../pages/appScreen/pengaturanScreen/JadwalPenyiramanScreen';
 import MasaTanamScreen from '../pages/appScreen/pengaturanScreen/MasaTanamScreen';
 import {StyleSheet} from 'react-native';
+import {Color, FontFamily} from '../constants/GlobalStyles';
+import {
+  heightPercentageToDP as hp,
+  widthPercentageToDP as wp,
+} from 'react-native-responsive-screen';
 
-const MainAppNavigator = () => {
-  const Stack = createStackNavigator();
+const Stack = createStackNavigator();
+
+const MainAppNavigator: React.FC<{onLogout: () => void}> = ({onLogout}) => {
   return (
-    <Stack.Navigator initialRouteName="BottomTab">
+    <Stack.Navigator
+      initialRouteName="BottomTab"
+      screenOptions={{...TransitionPresets.ScaleFromCenterAndroid}}>
       <Stack.Group>
-        <Stack.Screen
-          name="BottomTab"
-          component={BottomNavigator}
-          options={{headerShown: false}}
-        />
+        <Stack.Screen name="BottomTab" options={{headerShown: false}}>
+          {props => <BottomNavigator {...props} onLogout={onLogout} />}
+        </Stack.Screen>
       </Stack.Group>
-      <Stack.Group
-        screenOptions={{
-          ...TransitionPresets.SlideFromRightIOS,
-        }}>
+      <Stack.Group>
         <Stack.Screen
           name="MonitoringScreen"
           component={MonitoringScreen}
@@ -54,7 +49,9 @@ const MainAppNavigator = () => {
         screenOptions={{
           ...TransitionPresets.SlideFromRightIOS,
         }}>
-        <Stack.Screen name="PengaturanScreen" component={PengaturanScreen} />
+        <Stack.Screen name="PengaturanScreen">
+          {props => <PengaturanScreen {...props} onLogout={onLogout} />}
+        </Stack.Screen>
         <Stack.Screen
           name="MasaTanam"
           component={MasaTanamScreen}

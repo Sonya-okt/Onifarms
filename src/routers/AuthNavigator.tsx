@@ -3,18 +3,18 @@ import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import Splash from '../pages/welcomeScreen/Splash';
 import Login from '../pages/authScreen/Login';
 import Register from '../pages/authScreen/Register';
-import BottomNavigator from './BottomNavigator';
+import MainAppNavigator from './MainAppNavigator';
 
 type StackParamList = {
   Splash: undefined;
   Login: undefined;
   Register: undefined;
-  BottomNavigator: undefined;
+  MainAppNavigator: undefined;
 };
 
 const Stack = createStackNavigator<StackParamList>();
 
-const AuthStackNav: React.FC = () => {
+const AuthNavigator: React.FC<{onLogin: () => void}> = ({onLogin}) => {
   return (
     <Stack.Navigator
       initialRouteName="Splash"
@@ -23,15 +23,12 @@ const AuthStackNav: React.FC = () => {
         headerShown: false,
       }}>
       <Stack.Screen name="Splash" component={Splash} />
-      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="Login">
+        {props => <Login {...props} onLogin={onLogin} />}
+      </Stack.Screen>
       <Stack.Screen name="Register" component={Register} />
-      <Stack.Screen
-        name="BottomNavigator"
-        component={BottomNavigator}
-        options={{headerShown: false}}
-      />
     </Stack.Navigator>
   );
 };
 
-export default AuthStackNav;
+export default AuthNavigator;

@@ -1,4 +1,3 @@
-// src/routers/ApplicationNavigator.tsx
 import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import MainAppNavigator from './MainAppNavigator';
@@ -25,14 +24,22 @@ const ApplicationNavigator: React.FC = () => {
     checkLoginStatus();
   }, []);
 
+  const onLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  const onLogout = () => {
+    setIsLoggedIn(false);
+  };
+
   return (
     <NavigationContainer>
       {isLoading ? (
         <Splash />
       ) : isLoggedIn ? (
-        <MainAppNavigator />
+        <MainAppNavigator onLogout={onLogout} />
       ) : (
-        <AuthNavigator />
+        <AuthNavigator onLogin={onLogin} />
       )}
     </NavigationContainer>
   );

@@ -18,7 +18,7 @@ import PengaturanMenuIcon from '../components/svgFunComponent/bottomNavSvg/Penga
 
 const Tab = createBottomTabNavigator();
 
-const BottomNavigator = () => {
+const BottomNavigator: React.FC<{onLogout: () => void}> = ({onLogout}) => {
   return (
     <Tab.Navigator
       initialRouteName="Monitoring"
@@ -60,11 +60,11 @@ const BottomNavigator = () => {
       />
       <Tab.Screen
         name="Pengaturan"
-        component={PengaturanScreen}
         options={{
           tabBarIcon: ({color}) => <PengaturanMenuIcon stroke={color} />,
-        }}
-      />
+        }}>
+        {props => <PengaturanScreen {...props} onLogout={onLogout} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 };

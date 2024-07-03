@@ -4,7 +4,6 @@ import {
   Image,
   StyleSheet,
   Text,
-  Dimensions,
   TextInput,
   TouchableOpacity,
   ToastAndroid,
@@ -25,14 +24,11 @@ import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
 import RNSecureStorage, {ACCESSIBLE} from 'rn-secure-storage';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
-const {width, height} = Dimensions.get('window');
-
 type RootStackParamList = {
   Register: undefined;
-  MainAppNavigator: undefined;
 };
 
-const Login: React.FC = () => {
+const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,25 +79,24 @@ const Login: React.FC = () => {
     try {
       const userCredential: FirebaseAuthTypes.UserCredential =
         await auth().signInWithEmailAndPassword(email, password);
-      const token = await userCredential.user.getIdToken();
-      ToastAndroid.show('Login sukses', ToastAndroid.LONG);
-      handleSuccessfulLogin(userCredential);
+
+      showToast('Login sukses');
+      await handleSuccessfulLogin(userCredential);
+      await displayStoredData(); // Panggil fungsi untuk menampilkan data yang tersimpan
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
-        ToastAndroid.show(
+        showToast(
           'Akun tidak terdaftar. Mohon lakukan registrasi terlebih dahulu.',
-          ToastAndroid.LONG,
         );
       } else if (error.code === 'auth/invalid-credential') {
-        ToastAndroid.show(
+        showToast(
           'Email/password tidak valid atau kadaluarsa. Silakan coba lagi.',
-          ToastAndroid.LONG,
         );
       } else if (error.code === 'auth/wrong-password') {
-        ToastAndroid.show('Email atau password salah.', ToastAndroid.LONG);
+        showToast('Email atau password salah.');
       } else {
         console.error(error);
-        ToastAndroid.show(error.message || 'Login gagal', ToastAndroid.LONG);
+        showToast(error.message || 'Login gagal');
       }
     } finally {
       setLoading(false);
@@ -112,42 +107,53 @@ const Login: React.FC = () => {
     userCredential: FirebaseAuthTypes.UserCredential,
   ) => {
     try {
+      const token = await userCredential.user.getIdToken();
       const uid = userCredential.user.uid;
+
+      // Log the userID and token
+      console.log('User ID:', uid);
+      console.log('Token:', token);
+
+      await RNSecureStorage.setItem('token', token, {
+        accessible: ACCESSIBLE.WHEN_UNLOCKED,
+      });
       await RNSecureStorage.setItem('userUID', uid, {
         accessible: ACCESSIBLE.WHEN_UNLOCKED,
       });
-      navigation.navigate('MainAppNavigator');
+      onLogin();
     } catch (error) {
       console.error('Error storing token:', error);
     }
   };
 
+  const displayStoredData = async () => {
+    try {
+      const token = await RNSecureStorage.getItem('token');
+      const userUID = await RNSecureStorage.getItem('userUID');
+      console.log('Stored Token:', token);
+      console.log('Stored User UID:', userUID);
+    } catch (error) {
+      console.error('Error retrieving stored data:', error);
+    }
+  };
+
   const handleForgotPassword = async () => {
     if (!email) {
-      ToastAndroid.show(
-        'Mohon isi email untuk reset password',
-        ToastAndroid.LONG,
-      );
+      showToast('Mohon isi email untuk reset password');
       return;
     }
 
     if (!isValidEmail(email)) {
-      ToastAndroid.show('Format email tidak valid', ToastAndroid.LONG);
+      showToast('Format email tidak valid');
       return;
     }
 
     try {
       await auth().sendPasswordResetEmail(email);
-      ToastAndroid.show(
-        'Email reset password telah dikirim',
-        ToastAndroid.LONG,
-      );
+      showToast('Email reset password telah dikirim');
     } catch (error: any) {
       console.error(error);
-      ToastAndroid.show(
-        error.message || 'Gagal mengirim email reset password',
-        ToastAndroid.LONG,
-      );
+      showToast(error.message || 'Gagal mengirim email reset password');
     }
   };
 

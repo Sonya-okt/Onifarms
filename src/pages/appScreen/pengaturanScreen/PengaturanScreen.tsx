@@ -20,7 +20,7 @@ import PhotoProfile from '../../../components/svgFunComponent/pengaturanSvg/Phot
 import AddPhoto from '../../../components/svgFunComponent/pengaturanSvg/AddPhoto';
 import ButtonNavigation from '../../../components/svgFunComponent/pengaturanSvg/ButtonNavigation';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionSheet, {ActionSheetRef} from 'react-native-actions-sheet';
 import auth from '@react-native-firebase/auth';
@@ -32,11 +32,9 @@ type RootStackParamList = {
   PengaturanScreen: undefined;
   JadwalPenyiraman: undefined;
   DataRecord: undefined;
-  LoginScreen: undefined; // Add LoginScreen to navigation stack
-  AuthNavigator: undefined;
 };
 
-const PengaturanScreen: React.FC = () => {
+const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const actionSheetRef = useRef<ActionSheetRef>(null);
@@ -106,10 +104,23 @@ const PengaturanScreen: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await auth().signOut();
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        await auth().signOut();
+        console.log('Signed out from Firebase');
+      } else {
+        console.log('No user currently signed in');
+      }
+
       await RNSecureStorage.removeItem('userUID');
-      navigation.navigate('AuthNavigator');
+      console.log('Removed userUID from secure storage');
+      await RNSecureStorage.removeItem('token');
+      console.log('Removed token from secure storage');
+
+      onLogout();
+      console.log('Called onLogout');
     } catch (error) {
+      console.error('Logout error:', error);
       Alert.alert('Error', 'Failed to log out');
     }
   };
