@@ -20,11 +20,8 @@ import {
 } from 'react-native-responsive-screen';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
 import DescLogo from '../../components/recycle/DescLogo';
-import auth from '@react-native-firebase/auth';
-import {
-  statusCodes,
-  GoogleSignin,
-} from '@react-native-google-signin/google-signin';
+import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
+
 import RNSecureStorage, {ACCESSIBLE} from 'rn-secure-storage';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
@@ -32,6 +29,7 @@ const {width, height} = Dimensions.get('window');
 
 type RootStackParamList = {
   Register: undefined;
+  MainAppNavigator: undefined;
 };
 
 const Login: React.FC = () => {
@@ -42,12 +40,6 @@ const Login: React.FC = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-
-  GoogleSignin.configure({
-    webClientId:
-      '356008102834-kqjn35u18f65r4jnt8vut9e3gc02o38u.apps.googleusercontent.com',
-    profileImageSize: 120,
-  });
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,7 +67,7 @@ const Login: React.FC = () => {
   };
 
   const showToast = (message: string) => {
-    if (Platform.OS === 'android') {
+    if ((Platform.OS === 'ios', Platform.OS === 'android')) {
       ToastAndroid.show(message, ToastAndroid.LONG);
     } else {
       Alert.alert(message);
@@ -89,13 +81,11 @@ const Login: React.FC = () => {
 
     setLoading(true);
     try {
-      const userCredential = await auth().signInWithEmailAndPassword(
-        email,
-        password,
-      );
+      const userCredential: FirebaseAuthTypes.UserCredential =
+        await auth().signInWithEmailAndPassword(email, password);
       const token = await userCredential.user.getIdToken();
       ToastAndroid.show('Login sukses', ToastAndroid.LONG);
-      handleSuccessfulLogin(token);
+      handleSuccessfulLogin(userCredential);
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
         ToastAndroid.show(
@@ -118,72 +108,15 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async (): Promise<void> => {
-    setLoading(true);
+  const handleSuccessfulLogin = async (
+    userCredential: FirebaseAuthTypes.UserCredential,
+  ) => {
     try {
-      await GoogleSignin.hasPlayServices();
-      await GoogleSignin.revokeAccess(); // Revoke access to ensure the account picker is shown
-      const userInfo = await GoogleSignin.signIn();
-      const {idToken} = userInfo;
-
-      if (idToken) {
-        // Cek apakah email terdaftar di Firebase
-        const credential = auth.GoogleAuthProvider.credential(idToken);
-        const firebaseUser = await auth().signInWithCredential(credential);
-
-        // Cek apakah user baru atau existing
-        if (firebaseUser.additionalUserInfo?.isNewUser) {
-          // Jika user baru, logout kembali dan tampilkan pesan
-          await auth().signOut();
-          showToast(
-            'Akun tidak ada, mohon lakukan registrasi terlebih dahulu.',
-          );
-        } else {
-          showToast('Login dengan Google sukses');
-          const token = await firebaseUser.user.getIdToken();
-          handleSuccessfulLogin(token); // Panggil handleSuccessfulLogin dengan token
-          // Navigasi ke layar Home atau layar lainnya
-        }
-      } else {
-        showToast(
-          'Email tidak terdaftar. Mohon lakukan registrasi terlebih dahulu.',
-        );
-      }
-    } catch (error: any) {
-      console.error('Error during Google Sign-In:', error);
-      if (error.code) {
-        switch (error.code) {
-          case statusCodes.SIGN_IN_CANCELLED:
-            showToast('Sign in dibatalkan');
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            showToast(
-              'Google Play Services tidak tersedia. Mohon update atau izinkan.',
-            );
-            break;
-          case statusCodes.IN_PROGRESS:
-            showToast('Sign in sedang dalam proses');
-            break;
-          case statusCodes.SIGN_IN_REQUIRED:
-            showToast('Sign in diperlukan');
-            break;
-          default:
-            showToast('Terjadi error pada Google Sign-In.');
-        }
-      } else {
-        showToast(`Terjadi kesalahan: ${error.message}`);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSuccessfulLogin = async (token: string) => {
-    try {
-      await RNSecureStorage.setItem('authToken', token, {
+      const uid = userCredential.user.uid;
+      await RNSecureStorage.setItem('userUID', uid, {
         accessible: ACCESSIBLE.WHEN_UNLOCKED,
       });
-      // Navigate to the desired screen
+      navigation.navigate('MainAppNavigator');
     } catch (error) {
       console.error('Error storing token:', error);
     }
@@ -314,25 +247,12 @@ const Login: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.buttonLogin}>
-          <TouchableOpacity onPress={handleLogin}>
-            {loading ? (
-              <ActivityIndicator size="small" color={Color.colorGray_100} />
-            ) : (
-              <Text style={styles.buttonLoginTxt}>Login</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.buttonLoginGoogle]}
-          onPress={handleGoogleLogin}>
-          <Image
-            style={styles.googleIcon}
-            resizeMode="cover"
-            source={require('../../components/images/authImage/logoGoogle.png')}
-          />
-          <Text style={styles.loginDenganGoogle}>Login dengan Google</Text>
+        <TouchableOpacity onPress={handleLogin} style={styles.buttonLogin}>
+          {loading ? (
+            <ActivityIndicator size="small" color={Color.colorGray_100} />
+          ) : (
+            <Text style={styles.buttonLoginTxt}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <View style={[styles.logintoregist]}>

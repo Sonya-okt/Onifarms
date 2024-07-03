@@ -24,6 +24,7 @@ import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionSheet, {ActionSheetRef} from 'react-native-actions-sheet';
 import auth from '@react-native-firebase/auth';
+import RNSecureStorage from 'rn-secure-storage';
 
 // Define the type for the navigation parameters
 type RootStackParamList = {
@@ -32,6 +33,7 @@ type RootStackParamList = {
   JadwalPenyiraman: undefined;
   DataRecord: undefined;
   LoginScreen: undefined; // Add LoginScreen to navigation stack
+  AuthNavigator: undefined;
 };
 
 const PengaturanScreen: React.FC = () => {
@@ -105,7 +107,8 @@ const PengaturanScreen: React.FC = () => {
   const handleLogout = async () => {
     try {
       await auth().signOut();
-      navigation.navigate('LoginScreen');
+      await RNSecureStorage.removeItem('userUID');
+      navigation.navigate('AuthNavigator');
     } catch (error) {
       Alert.alert('Error', 'Failed to log out');
     }
