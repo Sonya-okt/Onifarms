@@ -19,7 +19,6 @@ import {
   CollapseHeader,
   CollapseBody,
 } from 'accordion-collapse-react-native';
-import {Rows, Table} from 'react-native-table-component';
 import AddBendenganSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AddBendenganSvg';
 import AngleUpSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AngleUpSvg';
 import AngleDownSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AngleDownSvg';
@@ -440,15 +439,6 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <Text style={styles.collapseBodyText2}>:</Text>
               <Text style={styles.collapseBodyText}>{kalium} ppm</Text>
             </View>
-
-            {/* <Table>
-              <Rows
-                data={renderTableData(item)}
-                style={styles.row}
-                textStyle={text}
-                widthArr={[wp('25%'), wp('5%'), wp('32%'), wp('15%')]}
-              />
-            </Table> */}
           </View>
         </CollapseBody>
       </Collapse>
@@ -602,8 +592,6 @@ const styles = StyleSheet.create({
     fontSize: wp('3%'),
     color: Color.BLACK,
     width: wp('35%'),
-    borderColor: Color.GREY,
-    borderWidth: 1,
     marginVertical: hp('-2%'),
   },
   longLatText: {
@@ -617,14 +605,12 @@ const styles = StyleSheet.create({
     paddingVertical: hp('3%'),
     paddingHorizontal: wp('2%'),
   },
-  collapseBody: {flexDirection: 'row', marginBottom: hp('2%')},
+  collapseBody: {flexDirection: 'row', marginVertical: hp('1%')},
   collapseBodyText: {
     width: wp('25%'),
     color: Color.BLACK,
     fontFamily: FontFamily.poppinsRegular,
     fontSize: wp('3%'),
-    borderColor: Color.GREY,
-    borderWidth: 1,
   },
   collapseBodyText2: {
     marginHorizontal: wp('3%'),
