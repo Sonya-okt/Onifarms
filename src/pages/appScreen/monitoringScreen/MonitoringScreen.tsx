@@ -27,6 +27,7 @@ import LocationSearch, {
 import {EventRegister} from 'react-native-event-listeners';
 import database from '@react-native-firebase/database';
 import {FlatList} from 'react-native-gesture-handler';
+import RNSecureStorage from 'rn-secure-storage';
 
 const MonitoringScreen: React.FC = () => {
   const [dayNightImage, setDayNightImage] = useState(
@@ -113,6 +114,62 @@ const MonitoringScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    const fetchUserUIDAndData = async () => {
+      try {
+        const uid = await RNSecureStorage.getItem('userUID');
+        if (uid) {
+          const suhuRef = database().ref(`${uid}/Average/suhu`);
+          const kelembapanRef = database().ref(`${uid}/Average/kelembapan`);
+          const phRef = database().ref(`${uid}/Average/ph`);
+          const nitrogenRef = database().ref(`${uid}/Average/nitrogen`);
+          const phosphorRef = database().ref(`${uid}/Average/phosphor`);
+          const kaliumRef = database().ref(`${uid}/Average/kalium`);
+
+          const onValueChange = (
+            snapshot: any,
+            setState: React.Dispatch<React.SetStateAction<number>>,
+            label: string,
+          ) => {
+            if (snapshot.exists()) {
+              setState(snapshot.val());
+              console.log(`${label} data: `, snapshot.val());
+            } else {
+              console.log(`${label} data not found`);
+            }
+          };
+
+          suhuRef.on('value', snapshot =>
+            onValueChange(snapshot, setSuhu, 'Suhu'),
+          );
+          kelembapanRef.on('value', snapshot =>
+            onValueChange(snapshot, setKelembapan, 'Kelembapan'),
+          );
+          phRef.on('value', snapshot => onValueChange(snapshot, setPh, 'pH'));
+          nitrogenRef.on('value', snapshot =>
+            onValueChange(snapshot, setNitrogen, 'Nitrogen'),
+          );
+          phosphorRef.on('value', snapshot =>
+            onValueChange(snapshot, setPhosphor, 'Phosphor'),
+          );
+          kaliumRef.on('value', snapshot =>
+            onValueChange(snapshot, setKalium, 'Kalium'),
+          );
+
+          return () => {
+            suhuRef.off();
+            kelembapanRef.off();
+            phRef.off();
+            nitrogenRef.off();
+            phosphorRef.off();
+            kaliumRef.off();
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching User UID:', error);
+      }
+    };
+
+    fetchUserUIDAndData();
     fetchStoredData();
 
     const handleDatesChanged = (dates: {
@@ -133,56 +190,6 @@ const MonitoringScreen: React.FC = () => {
       EventRegister.rm(listener);
     };
   }, [startDate, harvestDate]);
-
-  useEffect(() => {
-    const suhuRef = database().ref('1002/Average/suhu');
-    const kelembapanRef = database().ref('1002/Average/kelembapan');
-    const phRef = database().ref('1002/Average/ph');
-    const nitrogenRef = database().ref('1002/Average/nitrogen');
-    const phosphorRef = database().ref('1002/Average/phosphor');
-    const kaliumRef = database().ref('1002/Average/kalium');
-
-    const onValueChange = (
-      snapshot: any,
-      setState: React.Dispatch<React.SetStateAction<number>>,
-      label: string,
-    ) => {
-      if (snapshot.exists()) {
-        setState(snapshot.val());
-        console.log(`${label} data: `, snapshot.val());
-      } else {
-        console.log(`${label} data not found`);
-      }
-    };
-
-    const suhuListener = suhuRef.on('value', snapshot =>
-      onValueChange(snapshot, setSuhu, 'Suhu'),
-    );
-    const kelembapanListener = kelembapanRef.on('value', snapshot =>
-      onValueChange(snapshot, setKelembapan, 'Kelembapan'),
-    );
-    const phListener = phRef.on('value', snapshot =>
-      onValueChange(snapshot, setPh, 'pH'),
-    );
-    const nitrogenListener = nitrogenRef.on('value', snapshot =>
-      onValueChange(snapshot, setNitrogen, 'Nitrogen'),
-    );
-    const phosphorListener = phosphorRef.on('value', snapshot =>
-      onValueChange(snapshot, setPhosphor, 'Phosphor'),
-    );
-    const kaliumListener = kaliumRef.on('value', snapshot =>
-      onValueChange(snapshot, setKalium, 'Kalium'),
-    );
-
-    return () => {
-      suhuRef.off('value', suhuListener);
-      kelembapanRef.off('value', kelembapanListener);
-      phRef.off('value', phListener);
-      nitrogenRef.off('value', nitrogenListener);
-      phosphorRef.off('value', phosphorListener);
-      kaliumRef.off('value', kaliumListener);
-    };
-  }, []);
 
   const handleLocationSelect = async (
     item: any,
