@@ -25,6 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ActionSheet, {ActionSheetRef} from 'react-native-actions-sheet';
 import auth from '@react-native-firebase/auth';
 import RNSecureStorage from 'rn-secure-storage';
+import firestore from '@react-native-firebase/firestore';
 
 // Define the type for the navigation parameters
 type RootStackParamList = {
@@ -38,8 +39,29 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const actionSheetRef = useRef<ActionSheetRef>(null);
+  const [profileName, setProfileName] = useState<string>('-');
+  const [profileEmail, setProfileEmail] = useState<string>('-');
 
   useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const uid = await RNSecureStorage.getItem('userUID');
+        if (uid) {
+          const userDoc = await firestore()
+            .collection(uid)
+            .doc('userData')
+            .get();
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            setProfileName(userData?.nama || '-');
+            setProfileEmail(userData?.email || '-');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile data:', error);
+      }
+    };
+
     const loadPhoto = async () => {
       const savedPhotoUri = await AsyncStorage.getItem('profilePhoto');
       if (savedPhotoUri) {
@@ -47,6 +69,7 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
       }
     };
 
+    loadProfile();
     loadPhoto();
   }, []);
 
@@ -147,10 +170,8 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
             )}
           </TouchableOpacity>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Juragan Bawang</Text>
-            <Text style={styles.profileEmail}>
-              juraganbawangdemak@gmail.com
-            </Text>
+            <Text style={styles.profileName}>{profileName}</Text>
+            <Text style={styles.profileEmail}>{profileEmail}</Text>
           </View>
         </View>
         <View style={styles.buttonContainer}>
