@@ -111,8 +111,8 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
       const uid = userCredential.user.uid;
 
       // Log the userID and token
-      console.log('User ID:', uid);
-      console.log('Token:', token);
+      // console.log('User ID:', uid);
+      // console.log('Token:', token);
 
       await RNSecureStorage.setItem('token', token, {
         accessible: ACCESSIBLE.WHEN_UNLOCKED,
@@ -130,7 +130,7 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
     try {
       const token = await RNSecureStorage.getItem('token');
       const userUID = await RNSecureStorage.getItem('userUID');
-      console.log('Stored Token:', token);
+      // console.log('Stored Token:', token);
       console.log('Stored User UID:', userUID);
     } catch (error) {
       console.error('Error retrieving stored data:', error);
