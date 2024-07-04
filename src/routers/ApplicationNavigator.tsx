@@ -15,7 +15,7 @@ const ApplicationNavigator: React.FC = () => {
         const userUID = await RNSecureStorage.getItem('userUID');
         setIsLoggedIn(!!userUID);
       } catch (error) {
-        console.error('Error checking login status:', error);
+        console.log('Belum ada UID tersimpan:', error);
       } finally {
         setIsLoading(false);
       }
