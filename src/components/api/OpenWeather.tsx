@@ -198,6 +198,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   itemText: {
+    color: Color.GREY,
     padding: 10,
     borderBottomColor: Color.GREY,
     borderBottomWidth: 1,
