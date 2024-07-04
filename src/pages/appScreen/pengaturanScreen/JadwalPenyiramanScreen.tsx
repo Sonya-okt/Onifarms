@@ -9,7 +9,6 @@ import {
   Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
@@ -20,6 +19,7 @@ import XNotificationPenyiraman from '../../../components/svgFunComponent/pengatu
 import ChecklistNotificationPenyiraman from '../../../components/svgFunComponent/pengaturanSvg/ChecklistNotificationPenyiraman';
 import AddAlarmList from '../../../components/svgFunComponent/pengaturanSvg/AddAlarmList';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomTimePicker from '../../../components/daytimepick/CustomTimePicker';
 
 interface Item {
   id: string;
@@ -38,7 +38,7 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showDayPicker, setShowDayPicker] = useState(false);
-  const [tempSelectedTime, setTempSelectedTime] = useState<Date | null>(null);
+  const [tempSelectedTime, setTempSelectedTime] = useState<string | null>(null);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const allDays = [
     'Senin',
@@ -95,7 +95,7 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
     setShowTimePicker(true);
   };
 
-  const handleConfirmTime = (selectedTime: Date) => {
+  const handleConfirmTime = (selectedTime: string) => {
     setTempSelectedTime(selectedTime);
     confirmTimeSelection(selectedTime);
   };
@@ -105,15 +105,10 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
     setTempSelectedTime(null);
   };
 
-  const confirmTimeSelection = (selectedTime: Date) => {
+  const confirmTimeSelection = (selectedTime: string) => {
     if (selectedItem && selectedTime) {
-      const formattedTime = selectedTime.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      });
       const newData = data.map(d =>
-        d.id === selectedItem.id ? {...d, time: formattedTime} : d,
+        d.id === selectedItem.id ? {...d, time: selectedTime} : d,
       );
       setData(newData);
     }
@@ -235,10 +230,8 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
         />
       </View>
 
-      <DateTimePickerModal
+      <CustomTimePicker
         isVisible={showTimePicker}
-        mode="time"
-        display="spinner"
         onConfirm={handleConfirmTime}
         onCancel={handleCancelTime}
       />
