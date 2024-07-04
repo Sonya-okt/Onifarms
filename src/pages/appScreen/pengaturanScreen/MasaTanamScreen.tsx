@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
 import {Calendar} from 'react-native-calendars';
 import {EventRegister} from 'react-native-event-listeners';
@@ -18,6 +17,8 @@ import {
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
 import MulaiTanamSvg from '../../../components/svgFunComponent/pengaturanSvg/MulaiTanamSvg';
 import PanenSvg from '../../../components/svgFunComponent/pengaturanSvg/PanenSvg';
+import RNSecureStorage from 'rn-secure-storage';
+import firestore from '@react-native-firebase/firestore';
 
 type DateObject = {
   dateString: string;
@@ -39,31 +40,81 @@ const MasaTanamScreen: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const storedDates = await AsyncStorage.getItem('dates');
-        if (storedDates) {
-          const parsedDates = JSON.parse(storedDates);
-          setDates(parsedDates);
-          setStartDate(parsedDates.startDate.slice(-1)[0] || null);
-          setHarvestDate(parsedDates.harvestDate.slice(-1)[0] || null);
+        const uid = await RNSecureStorage.getItem('userUID');
+        if (uid) {
+          const datesDoc = await firestore()
+            .collection(uid)
+            .doc('plantHarvestDay')
+            .get();
+
+          if (datesDoc.exists) {
+            const data = datesDoc.data();
+            if (data) {
+              const startDates = Object.keys(data)
+                .filter(key => key.startsWith('startDate'))
+                .sort()
+                .map(key => data[key]);
+              const harvestDates = Object.keys(data)
+                .filter(key => key.startsWith('harvestDate'))
+                .sort()
+                .map(key => data[key]);
+
+              setDates({startDate: startDates, harvestDate: harvestDates});
+              setStartDate(startDates.slice(-1)[0] || null);
+              setHarvestDate(harvestDates.slice(-1)[0] || null);
+            } else {
+              setDates({startDate: [], harvestDate: []});
+            }
+          } else {
+            setDates({startDate: [], harvestDate: []});
+          }
         }
         setLoading(false);
       } catch (error) {
-        console.error('Failed to load dates from storage', error);
+        console.error('Failed to load dates from Firestore', error);
+        setLoading(false); // Make sure to stop loading even if there's an error
       }
     };
 
     fetchData();
   }, []);
 
+  // Fungsi untuk menyimpan data tanggal ke Firestore
+  const saveDatesToFirestore = async (
+    dates: {startDate: string[]; harvestDate: string[]},
+    uid: string,
+  ) => {
+    try {
+      const data: {[key: string]: string} = {};
+      dates.startDate.forEach((date, index) => {
+        data[`startDate${index + 1}`] = date;
+      });
+      dates.harvestDate.forEach((date, index) => {
+        data[`harvestDate${index + 1}`] = date;
+      });
+
+      await firestore()
+        .collection(uid)
+        .doc('plantHarvestDay')
+        .set(data, {merge: true});
+    } catch (error) {
+      console.error('Failed to save dates to Firestore', error);
+    }
+  };
+
+  // Menyimpan data tanggal ke Firestore saat ada perubahan
   const saveDates = async (dates: {
     startDate: string[];
     harvestDate: string[];
   }) => {
     try {
-      await AsyncStorage.setItem('dates', JSON.stringify(dates));
       EventRegister.emit('datesChanged', dates);
+      const uid = await RNSecureStorage.getItem('userUID');
+      if (uid) {
+        await saveDatesToFirestore(dates, uid);
+      }
     } catch (error) {
-      console.error('Failed to save dates to storage', error);
+      console.error('Failed to save dates to Firestore', error);
     }
   };
 
@@ -116,11 +167,56 @@ const MasaTanamScreen: React.FC = () => {
     }
   };
 
-  const handleRemoveMark = (date: string) => {
+  // Fungsi untuk menghapus data tanggal dari Firestore
+  const removeDateFromFirestore = async (
+    date: string,
+    type: 'startDate' | 'harvestDate',
+  ) => {
+    try {
+      const uid = await RNSecureStorage.getItem('userUID');
+      if (!uid) return;
+
+      const datesDoc = await firestore()
+        .collection(uid)
+        .doc('plantHarvestDay')
+        .get();
+
+      if (datesDoc.exists) {
+        const data = datesDoc.data();
+        if (data) {
+          const updatedData = Object.keys(data).reduce(
+            (acc, key) => {
+              if (data[key] !== date) {
+                acc[key] = data[key];
+              }
+              return acc;
+            },
+            {} as {[key: string]: string},
+          );
+
+          await firestore()
+            .collection(uid)
+            .doc('plantHarvestDay')
+            .set(updatedData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to remove date from Firestore', error);
+    }
+  };
+
+  const handleRemoveMark = async (date: string) => {
     let newDates = {...dates};
 
-    newDates.startDate = newDates.startDate.filter(d => d !== date);
-    newDates.harvestDate = newDates.harvestDate.filter(d => d !== date);
+    if (newDates.startDate.includes(date)) {
+      newDates.startDate = newDates.startDate.filter(d => d !== date);
+      await removeDateFromFirestore(date, 'startDate');
+    }
+
+    if (newDates.harvestDate.includes(date)) {
+      newDates.harvestDate = newDates.harvestDate.filter(d => d !== date);
+      await removeDateFromFirestore(date, 'harvestDate');
+    }
 
     setDates(newDates);
     saveDates(newDates);
