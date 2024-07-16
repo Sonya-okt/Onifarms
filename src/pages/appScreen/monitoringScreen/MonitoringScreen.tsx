@@ -67,39 +67,49 @@ const MonitoringScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const updateJumlahHari = (data: any) => {
+    const startDates = Object.keys(data)
+      .filter(key => key.startsWith('startDate'))
+      .sort()
+      .map(key => data[key]);
+    const harvestDates = Object.keys(data)
+      .filter(key => key.startsWith('harvestDate'))
+      .sort()
+      .map(key => data[key]);
+
+    const today = new Date();
+    let calculatedDays = 0;
+
+    if (startDates.length > harvestDates.length) {
+      const lastStartDate = new Date(startDates[startDates.length - 1]);
+      const diffTime = today.getTime() - lastStartDate.getTime();
+      calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    if (startDates.length === harvestDates.length) {
+      calculatedDays = 0;
+    }
+
+    setJumlahHari(calculatedDays);
+  };
+
   const fetchFirestoreData = async () => {
     try {
       const uid = await RNSecureStorage.getItem('userUID');
       if (uid) {
-        const datesDoc = await firestore()
+        const unsubscribe = firestore()
           .collection(uid)
           .doc('plantHarvestDay')
-          .get();
-
-        if (datesDoc.exists) {
-          const data = datesDoc.data();
-          if (data) {
-            const startDates = Object.keys(data)
-              .filter(key => key.startsWith('startDate'))
-              .sort()
-              .map(key => data[key]);
-            const harvestDates = Object.keys(data)
-              .filter(key => key.startsWith('harvestDate'))
-              .sort()
-              .map(key => data[key]);
-
-            const today = new Date();
-            let calculatedDays = 0;
-
-            if (startDates.length > harvestDates.length) {
-              const lastStartDate = new Date(startDates.slice(-1)[0]);
-              const diffTime = today.getTime() - lastStartDate.getTime();
-              calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          .onSnapshot(doc => {
+            if (doc.exists) {
+              const data = doc.data();
+              if (data) {
+                updateJumlahHari(data);
+              }
             }
+          });
 
-            setJumlahHari(calculatedDays);
-          }
-        }
+        return () => unsubscribe();
       }
     } catch (error) {
       console.error('Error fetching data from Firestore:', error);

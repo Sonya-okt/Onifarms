@@ -6,6 +6,7 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  ToastAndroid,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {Calendar} from 'react-native-calendars';
@@ -72,6 +73,10 @@ const MasaTanamScreen: React.FC = () => {
         setLoading(false);
       } catch (error) {
         console.error('Failed to load dates from Firestore', error);
+        ToastAndroid.show(
+          'Gagal memuat data dari Firestore',
+          ToastAndroid.LONG,
+        );
         setLoading(false); // Make sure to stop loading even if there's an error
       }
     };
