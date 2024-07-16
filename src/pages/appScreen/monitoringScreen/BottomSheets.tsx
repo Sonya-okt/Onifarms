@@ -19,7 +19,7 @@ import {
   CollapseHeader,
   CollapseBody,
 } from 'accordion-collapse-react-native';
-import AddBendenganSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AddBendenganSvg';
+import AddbedenganSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AddBendenganSvg';
 import AngleUpSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AngleUpSvg';
 import AngleDownSvg from '../../../components/svgFunComponent/monitoringScreenSvg/AngleDownSvg';
 import {getWeather, WeatherResponse} from '../../../components/api/OpenWeather';
@@ -58,19 +58,20 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
   selectedLocation,
 }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const [bendenganList, setBendenganList] = useState<number[]>([1]);
+  const [bedenganList, setbedenganList] = useState<number[]>([1]);
   const [currentWeatherData, setCurrentWeatherData] =
     useState<WeatherResponse | null>(weatherData);
   const [longitude, setLongitude] = useState('');
   const [latitude, setLatitude] = useState('');
   const [userUID, setUserUID] = useState<string | null>(null);
-  const [longitudeButtonText, setLongitudeButtonText] = useState('Simpan');
-  const [latitudeButtonText, setLatitudeButtonText] = useState('Simpan');
 
-  // State untuk data bendengan
-  const [bendenganData, setBendenganData] = useState<any>({});
-  const [bendenganStatus, setBendenganStatus] = useState<{
+  // State untuk data bedengan
+  const [bedenganData, setbedenganData] = useState<any>({});
+  const [bedenganStatus, setbedenganStatus] = useState<{
     [key: number]: {longitudeButtonText: string; latitudeButtonText: string};
+  }>({});
+  const [bateraiData, setBateraiData] = useState<{
+    [key: number]: {nodeKey: string; baterai: number}[];
   }>({});
   const [suhu, setSuhu] = useState<number>(0);
   const [kelembapan, setKelembapan] = useState<number>(0);
@@ -84,7 +85,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
       const uid = await RNSecureStorage.getItem('userUID');
       setUserUID(uid);
       if (uid) {
-        fetchBendenganData(uid);
+        fetchbedenganData(uid);
       }
     };
 
@@ -101,24 +102,24 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
     setCurrentWeatherData(weatherData);
   }, [weatherData]);
 
-  const fetchBendenganData = (uid: string) => {
-    const bendenganRef = database().ref(`${uid}/Data`);
-    bendenganRef.on('value', snapshot => {
+  const fetchbedenganData = (uid: string) => {
+    const bedenganRef = database().ref(`${uid}/Data`);
+    bedenganRef.on('value', snapshot => {
       const data = snapshot.val();
       if (data) {
-        const bendenganKeys = Object.keys(data);
-        const bendenganIndexes = bendenganKeys
-          .map(key => parseInt(key.replace('bendengan', ''), 10))
+        const bedenganKeys = Object.keys(data);
+        const bedenganIndexes = bedenganKeys
+          .map(key => parseInt(key.replace('bedengan', ''), 10))
           .sort((a, b) => a - b);
-        setBendenganList(bendenganIndexes);
-        setBendenganData(data);
+        setbedenganList(bedenganIndexes);
+        setbedenganData(data);
       } else {
-        setBendenganList([]);
-        setBendenganData({});
+        setbedenganList([]);
+        setbedenganData({});
       }
     });
 
-    return () => bendenganRef.off();
+    return () => bedenganRef.off();
   };
 
   const fetchCurrentWeather = async () => {
@@ -132,54 +133,99 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
     }
   };
 
-  const fetchBendenganValues = (index: number) => {
-    const path = `${userUID}/Data/bendengan${index}`;
-    const bendenganRef = database().ref(path);
-    bendenganRef.on('value', snapshot => {
+  const formatValue = (value: number): number => {
+    return parseFloat(value.toFixed(2));
+  };
+
+  const fetchbedenganValues = (index: number) => {
+    const path = `${userUID}/Data/bedengan${index}`;
+    const bedenganRef = database().ref(path);
+    bedenganRef.on('value', snapshot => {
       const data = snapshot.val();
       if (data) {
-        setSuhu(data.suhu || 0);
-        setKelembapan(data.kelembapan || 0);
-        setPh(data.ph || 0);
-        setNitrogen(data.nitrogen || 0);
-        setPhosphor(data.phosphor || 0);
-        setKalium(data.kalium || 0);
+        setSuhu(formatValue(data.suhu || 0));
+        setKelembapan(formatValue(data.kelembapan || 0));
+        setPh(formatValue(data.ph || 0));
+        setNitrogen(formatValue(data.nitrogen || 0));
+        setPhosphor(formatValue(data.phosphor || 0));
+        setKalium(formatValue(data.kalium || 0));
         setLongitude(data.longitude || '');
         setLatitude(data.latitude || '');
 
-        setBendenganStatus(prevState => ({
-          ...prevState,
-          [index]: {
-            longitudeButtonText: data.longitude ? 'Ubah' : 'Simpan',
-            latitudeButtonText: data.latitude ? 'Ubah' : 'Simpan',
-          },
+        setbedenganStatus(
+          (prevState: {
+            [key: number]: {
+              longitudeButtonText: string;
+              latitudeButtonText: string;
+            };
+          }) => ({
+            ...prevState,
+            [index]: {
+              longitudeButtonText: data.longitude ? 'Ubah' : 'Simpan',
+              latitudeButtonText: data.latitude ? 'Ubah' : 'Simpan',
+            },
+          }),
+        );
+
+        // Fetch baterai data
+        const nodeKeys = Object.keys(data).filter(key =>
+          key.startsWith('node'),
+        );
+        const bateraiList = nodeKeys.map(nodeKey => ({
+          nodeKey,
+          baterai: data[nodeKey].baterai,
         }));
+        setBateraiData(
+          (prevState: {
+            [key: number]: {nodeKey: string; baterai: number}[];
+          }) => ({
+            ...prevState,
+            [index]: bateraiList,
+          }),
+        );
       } else {
-        setSuhu(0);
-        setKelembapan(0);
-        setPh(0);
-        setNitrogen(0);
-        setPhosphor(0);
-        setKalium(0);
+        setSuhu(formatValue(0));
+        setKelembapan(formatValue(0));
+        setPh(formatValue(0));
+        setNitrogen(formatValue(0));
+        setPhosphor(formatValue(0));
+        setKalium(formatValue(0));
         setLongitude('');
         setLatitude('');
 
-        setBendenganStatus(prevState => ({
-          ...prevState,
-          [index]: {
-            longitudeButtonText: 'Simpan',
-            latitudeButtonText: 'Simpan',
-          },
-        }));
+        setbedenganStatus(
+          (prevState: {
+            [key: number]: {
+              longitudeButtonText: string;
+              latitudeButtonText: string;
+            };
+          }) => ({
+            ...prevState,
+            [index]: {
+              longitudeButtonText: 'Simpan',
+              latitudeButtonText: 'Simpan',
+            },
+          }),
+        );
+
+        setBateraiData(
+          (prevState: {
+            [key: number]: {nodeKey: string; baterai: number}[];
+          }) => ({
+            ...prevState,
+            [index]: [],
+          }),
+        );
       }
     });
 
-    return () => bendenganRef.off();
+    return () => bedenganRef.off();
   };
+
   const toggleCollapse = (index: number) => {
     setOpenIndex(prevIndex => (prevIndex === index ? null : index));
     if (index !== null) {
-      fetchBendenganValues(index);
+      fetchbedenganValues(index);
     }
   };
 
@@ -187,15 +233,15 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
     index: number,
     type: 'longitude' | 'latitude',
   ) => {
-    const path = `${userUID}/Data/bendengan${index}/${type}`;
+    const path = `${userUID}/Data/bedengan${index}/${type}`;
     const value = type === 'longitude' ? longitude : latitude;
 
-    if (bendenganStatus[index][`${type}ButtonText`] === 'Simpan') {
+    if (bedenganStatus[index][`${type}ButtonText`] === 'Simpan') {
       database()
         .ref(path)
         .set(value)
         .then(() => {
-          setBendenganStatus(prevState => ({
+          setbedenganStatus(prevState => ({
             ...prevState,
             [index]: {
               ...prevState[index],
@@ -213,7 +259,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
         [
           {
             text: 'Batal',
-            onPress: () => fetchBendenganValues(index),
+            onPress: () => fetchbedenganValues(index),
             style: 'cancel',
           },
           {
@@ -238,7 +284,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
   const confirmDelete = (item: number) => {
     Alert.alert(
       'Konfirmasi Penghapusan',
-      `Apakah Anda yakin ingin menghapus Bendengan ${item}?`,
+      `Apakah Anda yakin ingin menghapus Bedengan ${item}?`,
       [
         {
           text: 'Batal',
@@ -246,34 +292,34 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
         },
         {
           text: 'Hapus',
-          onPress: () => deleteBendengan(item),
+          onPress: () => deletebedengan(item),
           style: 'destructive',
         },
       ],
     );
   };
 
-  const deleteBendengan = (item: number) => {
+  const deletebedengan = (item: number) => {
     if (userUID) {
       database()
-        .ref(`${userUID}/Data/bendengan${item}`)
+        .ref(`${userUID}/Data/bedengan${item}`)
         .remove()
         .then(() => {
-          setBendenganList(prevList =>
-            prevList.filter(bendengan => bendengan !== item),
+          setbedenganList(prevList =>
+            prevList.filter(bedengan => bedengan !== item),
           );
         })
         .catch(error => {
-          console.error('Error deleting bendengan:', error);
+          console.error('Error deleting bedengan:', error);
         });
     }
   };
 
-  const addBendengan = () => {
+  const addbedengan = () => {
     if (userUID) {
-      const newIndex = bendenganList.length + 1;
+      const newIndex = bedenganList.length + 1;
       database()
-        .ref(`${userUID}/Data/bendengan${newIndex}`)
+        .ref(`${userUID}/Data/bedengan${newIndex}`)
         .set({
           suhu: 0,
           kelembapan: 0,
@@ -284,73 +330,21 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
           latitude: 0,
         })
         .then(() => {
-          setBendenganList([...bendenganList, newIndex]);
+          setbedenganList([...bedenganList, newIndex]);
         })
         .catch(error => {
-          console.error('Error adding bendengan:', error);
+          console.error('Error adding bedengan:', error);
         });
     }
   };
 
-  const text = {
-    fontFamily: FontFamily.poppinsMedium,
-    fontSize: wp('3%'),
-    color: Color.BLACK,
+  const convertVoltageToPercentage = (voltage: number) => {
+    if (voltage <= 3.3) return 0;
+    if (voltage >= 4.1) return 100;
+    return ((voltage - 3.3) / (4.1 - 3.3)) * 100;
   };
 
-  const renderTableData = (index: number) => {
-    return [
-      [
-        'Longitude',
-        ':',
-        <TextInput
-          key="longitude" // Tambahkan key unik untuk menghindari masalah rendering
-          style={styles.input}
-          value={longitude}
-          onChangeText={setLongitude}
-          placeholder="Isi longitude"
-          placeholderTextColor={Color.PLACEHOLDER_TXT}
-        />,
-        <TouchableOpacity
-          onPress={() => handleSaveOrUpdate(index, 'longitude')}>
-          <Text style={styles.longLatText}>
-            {bendenganStatus[index]?.longitudeButtonText || 'Simpan'}
-          </Text>
-        </TouchableOpacity>,
-      ],
-      [
-        'Latitude',
-        ':',
-        <TextInput
-          key="latitude" // Tambahkan key unik untuk menghindari masalah rendering
-          style={styles.input}
-          value={latitude}
-          onChangeText={setLatitude}
-          placeholder="Isi latitude"
-          placeholderTextColor={Color.PLACEHOLDER_TXT}
-        />,
-        <TouchableOpacity onPress={() => handleSaveOrUpdate(index, 'latitude')}>
-          <Text style={styles.longLatText}>
-            {bendenganStatus[index]?.latitudeButtonText || 'Simpan'}
-          </Text>
-        </TouchableOpacity>,
-      ],
-      ['Suhu', ':', `${suhu} °C`],
-      ['Kelembapan', ':', `${kelembapan} %`],
-      ['pH', ':', `${ph}`],
-      ['Nitrogen', ':', `${nitrogen} ppm`],
-      ['Phosphor', ':', `${phosphor} ppm`],
-      ['Kalium', ':', `${kalium} ppm`],
-    ];
-  };
-
-  const renderBendenganItem = ({
-    item,
-    index,
-  }: {
-    item: number;
-    index: number;
-  }) => (
+  const renderBedenganItem = ({item, index}: {item: number; index: number}) => (
     <View style={{width: wp('100%')}}>
       <Collapse
         onToggle={() => toggleCollapse(item)}
@@ -364,7 +358,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
             style={styles.accordionHeaderContainer}
             onPress={() => toggleCollapse(item)}
             onLongPress={() => confirmDelete(item)}>
-            <Text style={styles.accordionHeaderText}>Bendengan {item}</Text>
+            <Text style={styles.accordionHeaderText}>Bedengan {item}</Text>
             {openIndex === item ? <AngleUpSvg /> : <AngleDownSvg />}
           </TouchableOpacity>
         </CollapseHeader>
@@ -386,7 +380,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <TouchableOpacity
                 onPress={() => handleSaveOrUpdate(index, 'longitude')}>
                 <Text style={styles.longLatText}>
-                  {bendenganStatus[index]?.longitudeButtonText || 'Simpan'}
+                  {bedenganStatus[index]?.longitudeButtonText || 'Simpan'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -405,7 +399,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <TouchableOpacity
                 onPress={() => handleSaveOrUpdate(index, 'latitude')}>
                 <Text style={styles.longLatText}>
-                  {bendenganStatus[index]?.latitudeButtonText || 'Simpan'}
+                  {bedenganStatus[index]?.latitudeButtonText || 'Simpan'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -435,10 +429,27 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <Text style={styles.collapseBodyText}>{phosphor} ppm</Text>
             </View>
             <View style={styles.collapseBody}>
-              <Text style={[styles.collapseBodyText]}>Kalium</Text>
+              <Text style={styles.collapseBodyText}>Kalium</Text>
               <Text style={styles.collapseBodyText2}>:</Text>
               <Text style={styles.collapseBodyText}>{kalium} ppm</Text>
             </View>
+            {bateraiData[item] && bateraiData[item].length > 0 && (
+              <View>
+                <Text style={styles.bateraiText}>Baterai</Text>
+                <View style={styles.lineBaterai} />
+                {bateraiData[item].map((node: any, nodeIndex: number) => (
+                  <View style={styles.mapBaterai} key={nodeIndex}>
+                    <Text style={styles.collapseBodyText}>
+                      Node {node.nodeKey.replace('node', '')}
+                    </Text>
+                    <Text style={styles.collapseBodyText2}>:</Text>
+                    <Text key={nodeIndex} style={styles.collapseBodyText}>
+                      {convertVoltageToPercentage(node.baterai).toFixed(0)} %
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </CollapseBody>
       </Collapse>
@@ -468,19 +479,19 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <Text style={styles.suhuUdara}>°C</Text>
             </View>
           </View>
-          <View style={styles.monitoringBendenganContainer}>
+          <View style={styles.monitoringbedenganContainer}>
             <View>
-              <Text style={styles.titleText}>Monitoring per Bendengan</Text>
+              <Text style={styles.titleText}>Monitoring per Bedengan</Text>
             </View>
-            <TouchableOpacity onPress={addBendengan}>
-              <AddBendenganSvg />
+            <TouchableOpacity onPress={addbedengan}>
+              <AddbedenganSvg />
             </TouchableOpacity>
           </View>
         </View>
         <FlatList
-          data={bendenganList}
+          data={bedenganList}
           keyExtractor={item => item.toString()}
-          renderItem={renderBendenganItem}
+          renderItem={renderBedenganItem}
           contentContainerStyle={{paddingBottom: hp('12%')}} // Adding padding to avoid overlap
         />
       </LinearGradient>
@@ -530,7 +541,7 @@ const styles = StyleSheet.create({
     color: Color.BLACK,
     fontSize: wp('6%'),
   },
-  monitoringBendenganContainer: {
+  monitoringbedenganContainer: {
     width: wp('100%'),
     paddingHorizontal: wp('5%'),
     paddingTop: hp('1.5%'),
@@ -602,7 +613,7 @@ const styles = StyleSheet.create({
   },
   collapseBodyContainer: {
     width: '100%',
-    paddingVertical: hp('3%'),
+    paddingVertical: hp('1%'),
     paddingHorizontal: wp('2%'),
   },
   collapseBody: {flexDirection: 'row', marginVertical: hp('1%')},
@@ -612,12 +623,27 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.poppinsRegular,
     fontSize: wp('3%'),
   },
+  bateraiText: {
+    width: wp('25%'),
+    color: Color.BLACK,
+    fontFamily: FontFamily.poppinsRegular,
+    fontSize: wp('3.5%'),
+    fontWeight: 'bold',
+    marginVertical: hp('1%'),
+  },
+  lineBaterai: {
+    width: '100%',
+    borderBottomColor: 'black',
+    borderBottomWidth: 1,
+    marginBottom: hp('1%'),
+  },
   collapseBodyText2: {
     marginHorizontal: wp('3%'),
     color: Color.BLACK,
     fontFamily: FontFamily.poppinsRegular,
     fontSize: wp('3%'),
   },
+  mapBaterai: {flexDirection: 'row', marginBottom: hp('1%')},
 });
 
 export default BottomSheets;

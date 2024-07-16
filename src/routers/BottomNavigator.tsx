@@ -15,6 +15,7 @@ import MonitoringMenuIcon from '../components/svgFunComponent/bottomNavSvg/Monit
 import NotificationMenuIcon from '../components/svgFunComponent/bottomNavSvg/NotificationMenuIcon';
 import KesuburanMenuIcon from '../components/svgFunComponent/bottomNavSvg/KesuburanMenuIcon';
 import PengaturanMenuIcon from '../components/svgFunComponent/bottomNavSvg/PengaturanMenuIcon';
+import LastUpdateMenuIcon from '../components/svgFunComponent/bottomNavSvg/LastUpdateMenuIcon';
 
 const Tab = createBottomTabNavigator();
 
@@ -43,11 +44,11 @@ const BottomNavigator: React.FC<{onLogout: () => void}> = ({onLogout}) => {
         }}
       />
       <Tab.Screen
-        name="Notifikasi"
+        name="Data Update"
         component={NotificationScreen}
         options={{
           tabBarIcon: ({color}) => (
-            <NotificationMenuIcon fill={color} stroke={color} />
+            <LastUpdateMenuIcon fill={color} stroke={color} />
           ),
         }}
       />

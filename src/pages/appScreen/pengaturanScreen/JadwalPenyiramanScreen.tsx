@@ -18,7 +18,8 @@ import ToggleSwitch from 'toggle-switch-react-native';
 import XNotificationPenyiraman from '../../../components/svgFunComponent/pengaturanSvg/XNotificationPenyiraman';
 import ChecklistNotificationPenyiraman from '../../../components/svgFunComponent/pengaturanSvg/ChecklistNotificationPenyiraman';
 import AddAlarmList from '../../../components/svgFunComponent/pengaturanSvg/AddAlarmList';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
+import RNSecureStorage from 'rn-secure-storage';
 import CustomTimePicker from '../../../components/daytimepick/CustomTimePicker';
 
 interface Item {
@@ -27,6 +28,12 @@ interface Item {
   text: string;
   days: string[];
   isOn: boolean;
+}
+
+interface FirestoreData {
+  time: string;
+  status: boolean;
+  [key: string]: any; // This allows dynamic keys for day1, day2, etc.
 }
 
 interface Props {
@@ -40,6 +47,7 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
   const [showDayPicker, setShowDayPicker] = useState(false);
   const [tempSelectedTime, setTempSelectedTime] = useState<string | null>(null);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [userUID, setUserUID] = useState<string | null>(null);
   const allDays = [
     'Senin',
     'Selasa',
@@ -51,30 +59,75 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
   ];
 
   useEffect(() => {
-    loadData();
+    const fetchUserUIDAndData = async () => {
+      try {
+        const uid = await RNSecureStorage.getItem('userUID');
+        if (uid) {
+          setUserUID(uid);
+          fetchFirebaseData(uid);
+        }
+      } catch (error) {
+        console.error('Error fetching User UID:', error);
+      }
+    };
+
+    fetchUserUIDAndData();
   }, []);
 
   useEffect(() => {
-    saveData();
-  }, [data]);
+    if (userUID) {
+      saveData();
+    }
+  }, [data, userUID]);
 
   const saveData = async () => {
-    try {
-      await AsyncStorage.setItem('alarmData', JSON.stringify(data));
-    } catch (error) {
-      console.error('Failed to save data to AsyncStorage', error);
-    }
+    if (!userUID) return;
+
+    const batch = firestore().batch();
+    const userDoc = firestore().collection(userUID).doc('watering');
+
+    data.forEach((item, index) => {
+      const itemRef = userDoc.collection(`watering${index + 1}`).doc('status');
+      const firestoreData: FirestoreData = {
+        time: item.time,
+        status: item.isOn,
+      };
+      item.days.forEach((day, i) => {
+        firestoreData[`day${i + 1}`] = day;
+      });
+      batch.set(itemRef, firestoreData);
+    });
+
+    await batch.commit();
   };
 
-  const loadData = async () => {
-    try {
-      const savedData = await AsyncStorage.getItem('alarmData');
-      if (savedData) {
-        setData(JSON.parse(savedData));
+  const fetchFirebaseData = async (uid: string) => {
+    const userDoc = firestore().collection(uid).doc('watering');
+    const items: Item[] = [];
+
+    for (let i = 0; ; i++) {
+      const itemRef = userDoc.collection(`watering${i + 1}`).doc('status');
+      const doc = await itemRef.get();
+
+      if (!doc.exists) break;
+
+      const data = doc.data() as FirestoreData;
+      if (data) {
+        const days = Object.keys(data)
+          .filter(key => key.startsWith('day'))
+          .map(key => data[key]);
+
+        items.push({
+          id: (i + 1).toString(),
+          time: data.time,
+          text: `Penyiraman ${i + 1}`,
+          days,
+          isOn: Boolean(data.status), // Ensure `isOn` is boolean
+        });
       }
-    } catch (error) {
-      console.error('Failed to load data from AsyncStorage', error);
     }
+
+    setData(items);
   };
 
   const handleToggle = (item: Item) => {
@@ -82,12 +135,6 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
       d.id === item.id ? {...d, isOn: !item.isOn} : d,
     );
     setData(newData);
-    if (props.delete && item.isOn) {
-      props.delete(item.id);
-      console.log('Alarm Deleted with ID: ' + item.id);
-    } else {
-      console.log('Lagi nyoba toggle');
-    }
   };
 
   const handlePressItem = (item: Item) => {
@@ -158,11 +205,20 @@ const JadwalPenyiramanScreen: React.FC<Props> = props => {
           text: 'Ya',
           onPress: () => {
             setData(data.filter(d => d.id !== item.id));
+            deleteAlarm(item.id);
           },
         },
       ],
       {cancelable: true},
     );
+  };
+
+  const deleteAlarm = async (id: string) => {
+    if (!userUID) return;
+
+    const userDoc = firestore().collection(userUID).doc('watering');
+    const itemRef = userDoc.collection(`watering${id}`).doc('status');
+    await itemRef.delete();
   };
 
   const renderItem = ({item}: {item: Item}) => {

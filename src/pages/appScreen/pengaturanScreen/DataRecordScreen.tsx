@@ -5,8 +5,10 @@ import {
   TouchableOpacity,
   View,
   FlatList,
-  Alert,
   ActivityIndicator,
+  Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import DateTimePicker, {
@@ -18,6 +20,7 @@ import {
 } from 'react-native-responsive-screen';
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
 import database from '@react-native-firebase/database';
+import RNSecureStorage from 'rn-secure-storage';
 
 interface DataRecord {
   date: string;
@@ -33,25 +36,25 @@ const ItemComponent: React.FC<{item: DataRecord}> = ({item}) => {
   return (
     <View style={styles.itemContainer}>
       <Text style={[styles.dataTableText, {width: wp('20%')}]}>
-        {item.date}
+        {item.date || '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.temperature.toString()}
+        {item.temperature !== undefined ? item.temperature.toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('15%')}]}>
-        {item.humidity.toString()}
+        {item.humidity !== undefined ? item.humidity.toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.pH.toString()}
+        {item.pH !== undefined ? item.pH.toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.n.toString()}
+        {item.n !== undefined ? item.n.toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.p.toString()}
+        {item.p !== undefined ? item.p.toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.k.toString()}
+        {item.k !== undefined ? item.k.toString() : '-'}
       </Text>
     </View>
   );
@@ -59,105 +62,100 @@ const ItemComponent: React.FC<{item: DataRecord}> = ({item}) => {
 
 const DataRecordScreen: React.FC = () => {
   const [data, setData] = useState<DataRecord[]>([]);
-  const [fromDate, setFromDate] = useState<Date>(new Date());
-  const [toDate, setToDate] = useState<Date>(new Date());
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
   const [showFromDatePicker, setShowFromDatePicker] = useState<boolean>(false);
   const [showToDatePicker, setShowToDatePicker] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [uid, setUid] = useState<string | null>(null);
 
   const tableHead = ['Tanggal', 'Suhu', 'Kelembapan', 'pH', 'N', 'P', 'K'];
 
-  const currentData: {[key: string]: {sum: number; count: number}} = {
-    temperature: {sum: 0, count: 0},
-    humidity: {sum: 0, count: 0},
-    pH: {sum: 0, count: 0},
-    n: {sum: 0, count: 0},
-    p: {sum: 0, count: 0},
-    k: {sum: 0, count: 0},
-  };
-  let currentDate = new Date().toISOString().split('T')[0];
-
-  const resetCurrentData = () => {
-    currentData.temperature.sum = 0;
-    currentData.temperature.count = 0;
-    currentData.humidity.sum = 0;
-    currentData.humidity.count = 0;
-    currentData.pH.sum = 0;
-    currentData.pH.count = 0;
-    currentData.n.sum = 0;
-    currentData.n.count = 0;
-    currentData.p.sum = 0;
-    currentData.p.count = 0;
-    currentData.k.sum = 0;
-    currentData.k.count = 0;
-  };
-
-  const calculateAndSaveAverage = async () => {
-    const timestamp = new Date().getTime();
-    const temperature =
-      currentData.temperature.count > 0
-        ? currentData.temperature.sum / currentData.temperature.count
-        : 0;
-    const humidity =
-      currentData.humidity.count > 0
-        ? currentData.humidity.sum / currentData.humidity.count
-        : 0;
-    const pH =
-      currentData.pH.count > 0 ? currentData.pH.sum / currentData.pH.count : 0;
-    const n =
-      currentData.n.count > 0 ? currentData.n.sum / currentData.n.count : 0;
-    const p =
-      currentData.p.count > 0 ? currentData.p.sum / currentData.p.count : 0;
-    const k =
-      currentData.k.count > 0 ? currentData.k.sum / currentData.k.count : 0;
-
-    try {
-      await database().ref(`1002/DataRecord/${timestamp}`).set({
-        suhu: temperature,
-        kelembapan: humidity,
-        ph: pH,
-        nitrogen: n,
-        phosphor: p,
-        kalium: k,
-      });
-
-      console.log(`Data berhasil disimpan dengan timestamp: ${timestamp}`);
-    } catch (error) {
-      console.error('Error saving data: ', error);
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.LONG);
+    } else {
+      Alert.alert(message);
     }
   };
 
-  const fetchData = async (fromDate: Date, toDate: Date) => {
+  useEffect(() => {
+    const fetchUserUIDAndData = async () => {
+      try {
+        const uid = await RNSecureStorage.getItem('userUID');
+        if (uid) {
+          setUid(uid);
+          fetchData(uid, fromDate, toDate);
+        }
+      } catch (error) {
+        console.error('Error fetching User UID:', error);
+      }
+    };
+
+    fetchUserUIDAndData();
+
+    return () => {
+      if (uid) {
+        const dataRef = database().ref(`${uid}/DataRecord`);
+        dataRef.off();
+      }
+    };
+  }, []);
+
+  const fetchData = (
+    uid: string,
+    fromDate: Date | null,
+    toDate: Date | null,
+  ) => {
     setLoading(true);
-    try {
-      const snapshot = await database()
-        .ref('1002/DataRecord')
-        .orderByKey()
-        .once('value');
+    const dataRef = database().ref(`${uid}/DataRecord`);
+
+    const onValueChange = (snapshot: any) => {
       const fetchedData = snapshot.val();
       const dataList: DataRecord[] = [];
-      for (const key in fetchedData) {
-        const recordDate = new Date(parseInt(key));
-        if (recordDate >= fromDate && recordDate <= toDate) {
-          dataList.push({
-            date: recordDate.toISOString().split('T')[0],
-            temperature: fetchedData[key].suhu,
-            humidity: fetchedData[key].kelembapan,
-            pH: fetchedData[key].ph,
-            n: fetchedData[key].nitrogen,
-            p: fetchedData[key].phosphor,
-            k: fetchedData[key].kalium,
-          });
+
+      if (fetchedData) {
+        const allDates = Object.keys(fetchedData).sort(
+          (a, b) => new Date(b).getTime() - new Date(a).getTime(),
+        );
+
+        for (const dateKey of allDates) {
+          const recordDate = new Date(dateKey + 'T00:00:00Z'); // Gunakan waktu UTC
+
+          if (
+            !fromDate ||
+            !toDate ||
+            (recordDate >=
+              new Date(fromDate.toISOString().split('T')[0] + 'T00:00:00Z') &&
+              recordDate <=
+                new Date(toDate.toISOString().split('T')[0] + 'T23:59:59Z'))
+          ) {
+            const record = fetchedData[dateKey];
+            dataList.push({
+              date: dateKey, // Langsung gunakan dateKey
+              temperature: record.suhu,
+              humidity: record.kelembapan,
+              pH: record.ph,
+              n: record.nitrogen,
+              p: record.phosphor,
+              k: record.kalium,
+            });
+          }
         }
+        setData(dataList);
       }
-      setData(dataList);
-      console.log('Data rata-rata berhasil ditampilkan di UI');
-    } catch (error) {
-      console.error('Error fetching data: ', error);
-      Alert.alert('Error', 'Failed to fetch data from database.');
-    } finally {
+
       setLoading(false);
-    }
+    };
+
+    dataRef.on('value', onValueChange, error => {
+      console.error('Error fetching data:', error);
+      setLoading(false);
+    });
+
+    return () => {
+      dataRef.off('value', onValueChange);
+    };
   };
 
   const onFromDateChange = (
@@ -166,8 +164,18 @@ const DataRecordScreen: React.FC = () => {
   ) => {
     const currentDate = selectedDate || fromDate;
     setShowFromDatePicker(false);
-    if (currentDate > toDate) {
-      Alert.alert('Invalid Date', 'From date cannot be later than To date');
+    if (currentDate && currentDate > new Date()) {
+      Alert.alert(
+        'Invalid Date',
+        'Pemilihan tanggal tidak boleh melebihi tanggal sekarang',
+      );
+      return;
+    }
+    if (currentDate && toDate && currentDate > toDate) {
+      Alert.alert(
+        'Invalid Date Range',
+        'Pemilihan tanggal akhir tidak boleh melebihi tanggal akhir',
+      );
       return;
     }
     setFromDate(currentDate);
@@ -176,61 +184,32 @@ const DataRecordScreen: React.FC = () => {
   const onToDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     const currentDate = selectedDate || toDate;
     setShowToDatePicker(false);
-    if (currentDate < fromDate) {
-      Alert.alert('Invalid Date', 'To date cannot be earlier than From date');
+    if (currentDate && currentDate > new Date()) {
+      Alert.alert(
+        'Invalid Date',
+        'Tanggal akhir tidak boleh melebihi tanggal sekarang',
+      );
+      return;
+    }
+    if (currentDate && fromDate && currentDate < fromDate) {
+      Alert.alert(
+        'Invalid Date Range',
+        'Tanggal akhir tidak boleh kurang dari tanggal awal',
+      );
       return;
     }
     setToDate(currentDate);
   };
 
   const filterData = () => {
-    if (fromDate > toDate) {
-      Alert.alert(
-        'Invalid Date Range',
-        'From date cannot be later than To date',
-      );
+    if (fromDate && toDate && fromDate > toDate) {
+      Alert.alert('Warning', 'Penangambilan data gagal dilakukan');
       return;
     }
-    fetchData(fromDate, toDate);
+    if (uid) {
+      fetchData(uid, fromDate, toDate);
+    }
   };
-
-  useEffect(() => {
-    const ref = database().ref('1002/Average');
-
-    const updateData = async () => {
-      try {
-        const snapshot = await ref.once('value');
-        const fetchedData = snapshot.val();
-        const newDate = new Date().toISOString().split('T')[0];
-        if (newDate !== currentDate) {
-          await calculateAndSaveAverage();
-          resetCurrentData();
-          currentDate = newDate;
-        }
-        currentData.temperature.sum += parseFloat(fetchedData.suhu);
-        currentData.temperature.count += 1;
-        currentData.humidity.sum += parseFloat(fetchedData.kelembapan);
-        currentData.humidity.count += 1;
-        currentData.pH.sum += parseFloat(fetchedData.ph);
-        currentData.pH.count += 1;
-        currentData.n.sum += parseFloat(fetchedData.nitrogen);
-        currentData.n.count += 1;
-        currentData.p.sum += parseFloat(fetchedData.phosphor);
-        currentData.p.count += 1;
-        currentData.k.sum += parseFloat(fetchedData.kalium);
-        currentData.k.count += 1;
-      } catch (error) {
-        console.error('Error updating data: ', error);
-      }
-    };
-
-    const intervalId = setInterval(updateData, 600000); // Set interval to 10 minutes (600000 milliseconds)
-
-    return () => {
-      clearInterval(intervalId);
-      ref.off();
-    };
-  }, []);
 
   return (
     <LinearGradient
@@ -247,7 +226,7 @@ const DataRecordScreen: React.FC = () => {
               style={styles.dateButton}
               onPress={() => setShowFromDatePicker(true)}>
               <Text style={styles.dateFromText}>
-                {fromDate.toLocaleDateString()}
+                {fromDate ? fromDate.toLocaleDateString() : '-'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -257,7 +236,7 @@ const DataRecordScreen: React.FC = () => {
               style={styles.dateButton}
               onPress={() => setShowToDatePicker(true)}>
               <Text style={styles.dateFromText}>
-                {toDate.toLocaleDateString()}
+                {toDate ? toDate.toLocaleDateString() : '-'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -298,19 +277,21 @@ const DataRecordScreen: React.FC = () => {
       {showFromDatePicker && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={fromDate}
+          value={fromDate || new Date()}
           mode="date"
           display="default"
           onChange={onFromDateChange}
+          maximumDate={new Date()}
         />
       )}
       {showToDatePicker && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={toDate}
+          value={toDate || new Date()}
           mode="date"
           display="default"
           onChange={onToDateChange}
+          maximumDate={new Date()} // Set maximum date to today
         />
       )}
     </LinearGradient>

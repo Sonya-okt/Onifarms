@@ -18,7 +18,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
-import DescLogo from '../../components/recycle/DescLogo';
+import DescLogo from '../../components/logo/DescLogo';
 import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
 
 import RNSecureStorage, {ACCESSIBLE} from 'rn-secure-storage';
@@ -93,7 +93,7 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
           'Email/password tidak valid atau kadaluarsa. Silakan coba lagi.',
         );
       } else if (error.code === 'auth/wrong-password') {
-        showToast('Email atau password salah.');
+        showToast('Password salah.');
       } else {
         console.error(error);
         showToast(error.message || 'Login gagal');
@@ -110,10 +110,6 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
       const token = await userCredential.user.getIdToken();
       const uid = userCredential.user.uid;
 
-      // Log the userID and token
-      // console.log('User ID:', uid);
-      // console.log('Token:', token);
-
       await RNSecureStorage.setItem('token', token, {
         accessible: ACCESSIBLE.WHEN_UNLOCKED,
       });
@@ -122,7 +118,7 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
       });
       onLogin();
     } catch (error) {
-      console.error('Error storing token:', error);
+      console.error('Error storing token / userUID:', error);
     }
   };
 
@@ -247,9 +243,7 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
 
         <View style={[styles.forgotPassword]}>
           <TouchableOpacity onPress={handleForgotPassword}>
-            <Text style={[styles.forgotPasswordText]}>
-              Lupa Email/Password?
-            </Text>
+            <Text style={[styles.forgotPasswordText]}>Lupa Password?</Text>
           </TouchableOpacity>
         </View>
 

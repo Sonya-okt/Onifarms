@@ -1,8 +1,6 @@
 import React from 'react';
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import BottomNavigator from './BottomNavigator';
-import MonitoringScreen from '../pages/appScreen/monitoringScreen/MonitoringScreen';
-import MapScreen from '../pages/appScreen/monitoringScreen/MapScreen';
 import PengaturanScreen from '../pages/appScreen/pengaturanScreen/PengaturanScreen';
 import DataRecordScreen from '../pages/appScreen/pengaturanScreen/DataRecordScreen';
 import JadwalPenyiramanScreen from '../pages/appScreen/pengaturanScreen/JadwalPenyiramanScreen';
@@ -25,25 +23,6 @@ const MainAppNavigator: React.FC<{onLogout: () => void}> = ({onLogout}) => {
         <Stack.Screen name="BottomTab" options={{headerShown: false}}>
           {props => <BottomNavigator {...props} onLogout={onLogout} />}
         </Stack.Screen>
-      </Stack.Group>
-      <Stack.Group>
-        <Stack.Screen
-          name="MonitoringScreen"
-          component={MonitoringScreen}
-          options={{headerShown: false}}
-        />
-        <Stack.Screen
-          name="MapScreen"
-          component={MapScreen}
-          options={{
-            headerTitle: 'Maps',
-            headerTitleAlign: 'center',
-            headerTitleStyle: styles.headerTitleStyle,
-            headerStyle: styles.headerStyle,
-            headerBackTitleVisible: false,
-            headerTintColor: Color.PRIMARY,
-          }}
-        />
       </Stack.Group>
       <Stack.Group
         screenOptions={{

@@ -10,7 +10,6 @@ import {
   Button,
   Keyboard,
   KeyboardAvoidingView,
-  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -26,6 +25,7 @@ import LocationSearch, {
 } from '../../../components/api/OpenWeather';
 import {EventRegister} from 'react-native-event-listeners';
 import database from '@react-native-firebase/database';
+import firestore from '@react-native-firebase/firestore';
 import {FlatList} from 'react-native-gesture-handler';
 import RNSecureStorage from 'rn-secure-storage';
 
@@ -37,8 +37,6 @@ const MonitoringScreen: React.FC = () => {
   const [location, setLocation] = useState('Tembalang');
   const [isTyping, setIsTyping] = useState(false);
   const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
-  const [startDate, setStartDate] = useState<string | null>(null);
-  const [harvestDate, setHarvestDate] = useState<string | null>(null);
   const [jumlahHari, setJumlahHari] = useState<number>(0);
 
   const [suhu, setSuhu] = useState<number>(0);
@@ -49,6 +47,7 @@ const MonitoringScreen: React.FC = () => {
   const [kalium, setKalium] = useState<number>(0);
 
   useEffect(() => {
+    //Fungsi untuk mengetahui waktu saat ini dan menampilkan icon yang sesuai
     const updateImageBasedOnTime = () => {
       const currentHour = new Date().getHours();
       if (currentHour >= 6 && currentHour < 18) {
@@ -68,53 +67,47 @@ const MonitoringScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchStoredData = async () => {
+  const fetchFirestoreData = async () => {
     try {
-      const storedLocation = await AsyncStorage.getItem('location');
-      const storedDates = await AsyncStorage.getItem('dates');
+      const uid = await RNSecureStorage.getItem('userUID');
+      if (uid) {
+        const datesDoc = await firestore()
+          .collection(uid)
+          .doc('plantHarvestDay')
+          .get();
 
-      if (storedLocation) {
-        setLocation(storedLocation);
-      }
+        if (datesDoc.exists) {
+          const data = datesDoc.data();
+          if (data) {
+            const startDates = Object.keys(data)
+              .filter(key => key.startsWith('startDate'))
+              .sort()
+              .map(key => data[key]);
+            const harvestDates = Object.keys(data)
+              .filter(key => key.startsWith('harvestDate'))
+              .sort()
+              .map(key => data[key]);
 
-      if (storedDates) {
-        const parsedDates = JSON.parse(storedDates);
-        setStartDate(parsedDates.startDate.slice(-1)[0] || null);
-        setHarvestDate(parsedDates.harvestDate.slice(-1)[0] || null);
-        updateJumlahHari(parsedDates);
+            const today = new Date();
+            let calculatedDays = 0;
+
+            if (startDates.length > harvestDates.length) {
+              const lastStartDate = new Date(startDates.slice(-1)[0]);
+              const diffTime = today.getTime() - lastStartDate.getTime();
+              calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            setJumlahHari(calculatedDays);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error fetching stored data:', error);
+      console.error('Error fetching data from Firestore:', error);
     }
-  };
-
-  const updateJumlahHari = (dates: {
-    startDate: string[];
-    harvestDate: string[];
-  }) => {
-    const today = new Date();
-    let calculatedDays = 0;
-
-    for (let i = 0; i < dates.startDate.length; i++) {
-      const start = new Date(dates.startDate[i]);
-      const harvest = dates.harvestDate[i]
-        ? new Date(dates.harvestDate[i])
-        : null;
-
-      if (!harvest || today < harvest) {
-        const diffTime = today.getTime() - start.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        calculatedDays += diffDays;
-      } else {
-        calculatedDays = 0;
-      }
-    }
-
-    setJumlahHari(calculatedDays);
   };
 
   useEffect(() => {
-    const fetchUserUIDAndData = async () => {
+    const fetchRealtimeData = async () => {
       try {
         const uid = await RNSecureStorage.getItem('userUID');
         if (uid) {
@@ -129,9 +122,14 @@ const MonitoringScreen: React.FC = () => {
             snapshot: any,
             setState: React.Dispatch<React.SetStateAction<number>>,
             label: string,
+            isPh: boolean = false,
           ) => {
             if (snapshot.exists()) {
-              setState(snapshot.val());
+              const value = snapshot.val();
+              const roundedValue = isPh
+                ? parseFloat(value.toFixed(1))
+                : Math.round(value);
+              setState(roundedValue);
               console.log(`${label} data: `, snapshot.val());
             } else {
               console.log(`${label} data not found`);
@@ -144,7 +142,9 @@ const MonitoringScreen: React.FC = () => {
           kelembapanRef.on('value', snapshot =>
             onValueChange(snapshot, setKelembapan, 'Kelembapan'),
           );
-          phRef.on('value', snapshot => onValueChange(snapshot, setPh, 'pH'));
+          phRef.on('value', snapshot =>
+            onValueChange(snapshot, setPh, 'pH', true),
+          );
           nitrogenRef.on('value', snapshot =>
             onValueChange(snapshot, setNitrogen, 'Nitrogen'),
           );
@@ -169,16 +169,14 @@ const MonitoringScreen: React.FC = () => {
       }
     };
 
-    fetchUserUIDAndData();
-    fetchStoredData();
+    fetchRealtimeData();
+    fetchFirestoreData();
 
     const handleDatesChanged = (dates: {
       startDate: string[];
       harvestDate: string[];
     }) => {
-      setStartDate(dates.startDate.slice(-1)[0] || null);
-      setHarvestDate(dates.harvestDate.slice(-1)[0] || null);
-      updateJumlahHari(dates);
+      fetchFirestoreData();
     };
 
     const listener = EventRegister.on(
@@ -189,7 +187,7 @@ const MonitoringScreen: React.FC = () => {
     return () => {
       EventRegister.rm(listener);
     };
-  }, [startDate, harvestDate]);
+  }, []);
 
   const handleLocationSelect = async (
     item: any,

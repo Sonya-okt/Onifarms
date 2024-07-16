@@ -10,6 +10,7 @@ import HighIndicator from '../../../components/svgFunComponent/kesuburanScreenSv
 import LowIndicator from '../../../components/svgFunComponent/kesuburanScreenSvg/LowIndicator';
 import NormalIndicator from '../../../components/svgFunComponent/kesuburanScreenSvg/NormalIndicator';
 import database from '@react-native-firebase/database';
+import RNSecureStorage from 'rn-secure-storage';
 
 const KesuburanScreen: React.FC = () => {
   const scrollViewRef = useRef<FlatList | null>(null);
@@ -75,12 +76,12 @@ const KesuburanScreen: React.FC = () => {
   };
 
   const [conditions, setConditions] = useState<Conditions>({
-    suhu: getStatus(35, 'suhu'),
-    kelembapan: getStatus(80, 'kelembapan'),
-    pH: getStatus(6.5, 'pH'),
-    nitrogen: getStatus(225, 'nitrogen'),
-    phosphor: getStatus(2000, 'phosphor'),
-    kalium: getStatus(225, 'kalium'),
+    suhu: getStatus(0, 'suhu'),
+    kelembapan: getStatus(0, 'kelembapan'),
+    pH: getStatus(0, 'pH'),
+    nitrogen: getStatus(0, 'nitrogen'),
+    phosphor: getStatus(0, 'phosphor'),
+    kalium: getStatus(0, 'kalium'),
   });
 
   const calculatePercentage = (conditions: Conditions): number => {
@@ -133,6 +134,15 @@ const KesuburanScreen: React.FC = () => {
     },
   ];
 
+  const informasiKesuburan = [
+    {key: 'Suhu', range: conditionRanges.suhu.Normal, status: ''},
+    {key: 'Kelembapan', range: conditionRanges.kelembapan.Normal, status: ''},
+    {key: 'pH', range: conditionRanges.pH.Normal, status: ''},
+    {key: 'Nitrogen', range: conditionRanges.nitrogen.Normal, status: ''},
+    {key: 'Phosphor', range: conditionRanges.phosphor.Normal, status: ''},
+    {key: 'Kalium', range: conditionRanges.kalium.Normal, status: ''},
+  ];
+
   const renderItem = ({
     item,
   }: {
@@ -160,12 +170,27 @@ const KesuburanScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    const suhuRef = database().ref('1002/Average/suhu');
-    const kelembapanRef = database().ref('1002/Average/kelembapan');
-    const phRef = database().ref('1002/Average/ph');
-    const nitrogenRef = database().ref('1002/Average/nitrogen');
-    const phosphorRef = database().ref('1002/Average/phosphor');
-    const kaliumRef = database().ref('1002/Average/kalium');
+    const fetchUserUIDAndData = async () => {
+      try {
+        const uid = await RNSecureStorage.getItem('userUID');
+        if (uid) {
+          fetchFirebaseData(uid);
+        }
+      } catch (error) {
+        console.error('Error fetching User UID:', error);
+      }
+    };
+
+    fetchUserUIDAndData();
+  }, []);
+
+  const fetchFirebaseData = (uid: string) => {
+    const suhuRef = database().ref(`${uid}/Average/suhu`);
+    const kelembapanRef = database().ref(`${uid}/Average/kelembapan`);
+    const phRef = database().ref(`${uid}/Average/ph`);
+    const nitrogenRef = database().ref(`${uid}/Average/nitrogen`);
+    const phosphorRef = database().ref(`${uid}/Average/phosphor`);
+    const kaliumRef = database().ref(`${uid}/Average/kalium`);
 
     const onValueChange = (snapshot: any, type: keyof Conditions) => {
       if (snapshot.exists()) {
@@ -177,34 +202,24 @@ const KesuburanScreen: React.FC = () => {
       }
     };
 
-    const suhuListener = suhuRef.on('value', snapshot =>
-      onValueChange(snapshot, 'suhu'),
-    );
-    const kelembapanListener = kelembapanRef.on('value', snapshot =>
+    suhuRef.on('value', snapshot => onValueChange(snapshot, 'suhu'));
+    kelembapanRef.on('value', snapshot =>
       onValueChange(snapshot, 'kelembapan'),
     );
-    const phListener = phRef.on('value', snapshot =>
-      onValueChange(snapshot, 'pH'),
-    );
-    const nitrogenListener = nitrogenRef.on('value', snapshot =>
-      onValueChange(snapshot, 'nitrogen'),
-    );
-    const phosphorListener = phosphorRef.on('value', snapshot =>
-      onValueChange(snapshot, 'phosphor'),
-    );
-    const kaliumListener = kaliumRef.on('value', snapshot =>
-      onValueChange(snapshot, 'kalium'),
-    );
+    phRef.on('value', snapshot => onValueChange(snapshot, 'pH'));
+    nitrogenRef.on('value', snapshot => onValueChange(snapshot, 'nitrogen'));
+    phosphorRef.on('value', snapshot => onValueChange(snapshot, 'phosphor'));
+    kaliumRef.on('value', snapshot => onValueChange(snapshot, 'kalium'));
 
     return () => {
-      suhuRef.off('value', suhuListener);
-      kelembapanRef.off('value', kelembapanListener);
-      phRef.off('value', phListener);
-      nitrogenRef.off('value', nitrogenListener);
-      phosphorRef.off('value', phosphorListener);
-      kaliumRef.off('value', kaliumListener);
+      suhuRef.off();
+      kelembapanRef.off();
+      phRef.off();
+      nitrogenRef.off();
+      phosphorRef.off();
+      kaliumRef.off();
     };
-  }, []);
+  };
 
   return (
     <LinearGradient
@@ -286,12 +301,27 @@ const KesuburanScreen: React.FC = () => {
         }
         ListFooterComponent={
           <View style={{alignSelf: 'center'}}>
-            <View style={styles.rentangNilaiTag}>
-              <Text style={styles.rentangNilaiTagText}>Rentang nilai</Text>
+            <View style={[styles.rentangNilaiTag, {width: wp('42%')}]}>
+              <Text style={styles.rentangNilaiTagText}>
+                Rentang nilai saat ini
+              </Text>
             </View>
             <View style={styles.rentangNilaiContainer}>
               <FlatList
                 data={data}
+                renderItem={renderItem}
+                keyExtractor={item => item.key}
+                contentContainerStyle={styles.list}
+              />
+            </View>
+            <View style={[styles.rentangNilaiTag, {width: wp('49%')}]}>
+              <Text style={styles.rentangNilaiTagText}>
+                Informasi Kondisi normal
+              </Text>
+            </View>
+            <View style={styles.rentangNilaiContainer}>
+              <FlatList
+                data={informasiKesuburan}
                 renderItem={renderItem}
                 keyExtractor={item => item.key}
                 contentContainerStyle={styles.list}
@@ -454,7 +484,6 @@ const styles = StyleSheet.create({
   },
   rentangNilaiTag: {
     backgroundColor: Color.PRIMARY,
-    width: wp('30%'),
     height: hp('4%'),
     justifyContent: 'center',
     borderTopRightRadius: wp('4%'),

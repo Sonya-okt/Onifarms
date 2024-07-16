@@ -25,6 +25,7 @@ export const Color = {
   GREEN_BOTTOMNAV: '#207f6e',
   YELLOW_MASTAM: '#d7aa21',
   GREY: '#878686',
+  TODAY: '#6bcfe3',
   colorDarkslategray_100: '#16523f',
   secondaryColor1: '#ff3b30',
   buttonMenu: '#166254',

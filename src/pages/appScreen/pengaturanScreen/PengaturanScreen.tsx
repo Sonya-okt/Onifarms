@@ -126,26 +126,43 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
   };
 
   const handleLogout = async () => {
-    try {
-      const currentUser = auth().currentUser;
-      if (currentUser) {
-        await auth().signOut();
-        console.log('Signed out from Firebase');
-      } else {
-        console.log('No user currently signed in');
-      }
+    Alert.alert(
+      'Konfirmasi Logout',
+      'Apakah Anda yakin ingin logout?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Logout dibatalkan'),
+          style: 'cancel',
+        },
+        {
+          text: 'OK',
+          onPress: async () => {
+            try {
+              const currentUser = auth().currentUser;
+              if (currentUser) {
+                await auth().signOut();
+                console.log('Signed out from Firebase');
+              } else {
+                console.log('No user currently signed in');
+              }
 
-      await RNSecureStorage.removeItem('userUID');
-      console.log('Removed userUID from secure storage');
-      await RNSecureStorage.removeItem('token');
-      console.log('Removed token from secure storage');
+              await RNSecureStorage.removeItem('userUID');
+              console.log('Removed userUID from secure storage');
+              await RNSecureStorage.removeItem('token');
+              console.log('Removed token from secure storage');
 
-      onLogout();
-      console.log('Called onLogout');
-    } catch (error) {
-      console.error('Logout error:', error);
-      Alert.alert('Error', 'Failed to log out');
-    }
+              onLogout();
+              console.log('Called onLogout');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to log out');
+            }
+          },
+        },
+      ],
+      {cancelable: false},
+    );
   };
 
   return (

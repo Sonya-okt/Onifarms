@@ -8,6 +8,7 @@ import RNSecureStorage from 'rn-secure-storage';
 const ApplicationNavigator: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -21,8 +22,14 @@ const ApplicationNavigator: React.FC = () => {
       }
     };
 
-    checkLoginStatus();
-  }, []);
+    if (!showSplash) {
+      checkLoginStatus();
+    }
+  }, [showSplash]);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
 
   const onLogin = () => {
     setIsLoggedIn(true);
@@ -30,12 +37,13 @@ const ApplicationNavigator: React.FC = () => {
 
   const onLogout = () => {
     setIsLoggedIn(false);
+    setShowSplash(true);
   };
 
   return (
     <NavigationContainer>
       {isLoading ? (
-        <Splash />
+        <Splash onComplete={handleSplashComplete} />
       ) : isLoggedIn ? (
         <MainAppNavigator onLogout={onLogout} />
       ) : (

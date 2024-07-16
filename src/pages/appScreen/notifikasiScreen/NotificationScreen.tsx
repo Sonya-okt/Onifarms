@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
@@ -85,6 +84,20 @@ const NotificationScreen: React.FC = () => {
           'A new FCM message arrived!',
           remoteMessage.notification?.body,
         );
+
+        // Tambahkan notifikasi baru ke daftar
+        const newNotification: Notification = {
+          id: String(notifications.length + 1),
+          title: remoteMessage.notification?.title || 'No Title',
+          subtitle: remoteMessage.notification?.body || 'No Subtitle',
+          image: require('../../../components/images/notifikasiImage/watering.png'), // Adjust image as needed
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toLocaleDateString(),
+        };
+        setNotifications(prevNotifications => [
+          ...prevNotifications,
+          newNotification,
+        ]);
       }
     });
 

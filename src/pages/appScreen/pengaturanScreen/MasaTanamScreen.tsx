@@ -305,7 +305,7 @@ const MasaTanamScreen: React.FC = () => {
           onDayPress={onDayPress}
           markedDates={renderMarkedDates()}
           theme={{
-            todayTextColor: Color.GREEN,
+            todayTextColor: Color.TODAY,
             textDayFontFamily: FontFamily.poppinsRegular,
             textMonthFontFamily: FontFamily.poppinsSemiBold,
             arrowColor: Color.PRIMARY,

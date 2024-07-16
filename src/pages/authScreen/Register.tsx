@@ -18,7 +18,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
-import DescLogo from '../../components/recycle/DescLogo';
+import DescLogo from '../../components/logo/DescLogo';
 import auth from '@react-native-firebase/auth';
 import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import firestore from '@react-native-firebase/firestore';
@@ -116,7 +116,7 @@ const Register: React.FC = () => {
         },
       },
       Data: {
-        bendengan1: {
+        bedengan1: {
           longitude: 0,
           latitude: 0,
           suhu: 0,
