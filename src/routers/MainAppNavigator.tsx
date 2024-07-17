@@ -3,7 +3,6 @@ import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import BottomNavigator from './BottomNavigator';
 import PengaturanScreen from '../pages/appScreen/pengaturanScreen/PengaturanScreen';
 import DataRecordScreen from '../pages/appScreen/pengaturanScreen/DataRecordScreen';
-import JadwalPenyiramanScreen from '../pages/appScreen/pengaturanScreen/JadwalPenyiramanScreen';
 import MasaTanamScreen from '../pages/appScreen/pengaturanScreen/MasaTanamScreen';
 import {StyleSheet} from 'react-native';
 import {Color, FontFamily} from '../constants/GlobalStyles';
@@ -43,18 +42,7 @@ const MainAppNavigator: React.FC<{onLogout: () => void}> = ({onLogout}) => {
             headerTintColor: Color.PRIMARY,
           }}
         />
-        <Stack.Screen
-          name="JadwalPenyiraman"
-          component={JadwalPenyiramanScreen}
-          options={{
-            headerTitle: 'Jadwal Penyiraman',
-            headerTitleAlign: 'center',
-            headerTitleStyle: styles.headerTitleStyle,
-            headerStyle: styles.headerStyle,
-            headerBackTitleVisible: false,
-            headerTintColor: Color.PRIMARY,
-          }}
-        />
+
         <Stack.Screen
           name="DataRecord"
           component={DataRecordScreen}
