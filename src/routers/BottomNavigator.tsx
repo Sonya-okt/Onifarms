@@ -8,11 +8,10 @@ import {
 import {Color, FontFamily} from '../constants/GlobalStyles';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import MonitoringScreen from '../pages/appScreen/monitoringScreen/MonitoringScreen';
-import NotificationScreen from '../pages/appScreen/notifikasiScreen/NotificationScreen';
+import LastUpdateScreen from '../pages/appScreen/lastUpdateScreen/LastUpdateScreen';
 import KesuburanScreen from '../pages/appScreen/kesuburanScreen/KesuburanScreen';
 import PengaturanScreen from '../pages/appScreen/pengaturanScreen/PengaturanScreen';
 import MonitoringMenuIcon from '../components/svgFunComponent/bottomNavSvg/MonitoringMenuIcon';
-import NotificationMenuIcon from '../components/svgFunComponent/bottomNavSvg/NotificationMenuIcon';
 import KesuburanMenuIcon from '../components/svgFunComponent/bottomNavSvg/KesuburanMenuIcon';
 import PengaturanMenuIcon from '../components/svgFunComponent/bottomNavSvg/PengaturanMenuIcon';
 import LastUpdateMenuIcon from '../components/svgFunComponent/bottomNavSvg/LastUpdateMenuIcon';
@@ -45,7 +44,7 @@ const BottomNavigator: React.FC<{onLogout: () => void}> = ({onLogout}) => {
       />
       <Tab.Screen
         name="Data Update"
-        component={NotificationScreen}
+        component={LastUpdateScreen}
         options={{
           tabBarIcon: ({color}) => (
             <LastUpdateMenuIcon fill={color} stroke={color} />

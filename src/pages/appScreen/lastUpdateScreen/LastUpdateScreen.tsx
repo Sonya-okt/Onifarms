@@ -1,5 +1,12 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {StyleSheet, Text, View, FlatList} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ToastAndroid,
+  ActivityIndicator,
+} from 'react-native';
 import {
   heightPercentageToDP as hp,
   widthPercentageToDP as wp,
@@ -25,6 +32,8 @@ interface Node {
 
 const LastUpdateScreen: React.FC = () => {
   const [bedenganList, setBedenganList] = useState<Bedengan[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const lastUpdateTimeRef = useRef<{[key: string]: number}>({});
   const nodeUpdateTimeoutsRef = useRef<{[key: string]: NodeJS.Timeout}>({});
 
@@ -112,6 +121,7 @@ const LastUpdateScreen: React.FC = () => {
             });
 
             setBedenganList(parsedBedenganList);
+            setLoading(false);
           };
 
           const updateNodeStatus = (
@@ -203,6 +213,9 @@ const LastUpdateScreen: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching User UID:', error);
+        ToastAndroid.show('Error memuat data', ToastAndroid.LONG);
+        setError('Error memuat data');
+        setLoading(false);
       }
     };
 
@@ -281,11 +294,17 @@ const LastUpdateScreen: React.FC = () => {
       start={{x: 0, y: -0.4}}
       end={{x: 0.9, y: 1.5}}
       locations={[0.1, 0.5, 1]}>
-      <FlatList
-        data={bedenganList}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color={Color.PRIMARY} />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : (
+        <FlatList
+          data={bedenganList}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+        />
+      )}
     </LinearGradient>
   );
 };
@@ -337,6 +356,13 @@ const styles = StyleSheet.create({
   containerText: {
     paddingHorizontal: wp('4%'),
     marginVertical: hp('1.6%'),
+  },
+  errorText: {
+    fontFamily: FontFamily.poppinsMedium,
+    fontSize: wp('3.5%'),
+    color: 'red',
+    textAlign: 'center',
+    marginTop: hp('2%'),
   },
 });
 

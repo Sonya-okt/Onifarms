@@ -47,7 +47,6 @@ const MonitoringScreen: React.FC = () => {
   const [kalium, setKalium] = useState<number>(0);
 
   useEffect(() => {
-    //Fungsi untuk mengetahui waktu saat ini dan menampilkan icon yang sesuai
     const updateImageBasedOnTime = () => {
       const currentHour = new Date().getHours();
       if (currentHour >= 6 && currentHour < 18) {
@@ -97,14 +96,26 @@ const MonitoringScreen: React.FC = () => {
     try {
       const uid = await RNSecureStorage.getItem('userUID');
       if (uid) {
+        const doc = await firestore()
+          .collection(uid)
+          .doc('plantHarvestDay')
+          .get();
+
+        if (doc.exists) {
+          const data = doc.data();
+          if (data) {
+            updateJumlahHari(data);
+          }
+        }
+
         const unsubscribe = firestore()
           .collection(uid)
           .doc('plantHarvestDay')
-          .onSnapshot(doc => {
-            if (doc.exists) {
-              const data = doc.data();
-              if (data) {
-                updateJumlahHari(data);
+          .onSnapshot(docSnapshot => {
+            if (docSnapshot.exists) {
+              const updatedData = docSnapshot.data();
+              if (updatedData) {
+                updateJumlahHari(updatedData);
               }
             }
           });

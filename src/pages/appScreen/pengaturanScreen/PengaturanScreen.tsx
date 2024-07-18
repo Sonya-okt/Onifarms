@@ -195,8 +195,8 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
           <LinearGradient
             style={styles.ButtonLinearGradient}
             start={{x: 0, y: 1.2}}
-            end={{x: 0, y: 0.1}}
-            colors={['#327e69', '#bfd5cf']}
+            end={{x: -0.1, y: 0.2}}
+            colors={['#6aac99', '#bfd5cf']}
             locations={[0.1, 1]}>
             <TouchableOpacity
               style={styles.buttonStyle}
@@ -204,12 +204,7 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
               <Text style={styles.buttonText}>Masa tanam</Text>
               <ButtonNavigation />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.buttonStyle}
-              onPress={() => navigation.navigate('JadwalPenyiraman')}>
-              <Text style={styles.buttonText}>Jadwal Penyiraman</Text>
-              <ButtonNavigation />
-            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.buttonStyle}
               onPress={() => navigation.navigate('DataRecord')}>
@@ -304,7 +299,7 @@ const styles = StyleSheet.create({
   ButtonLinearGradient: {
     borderTopLeftRadius: wp('5%'),
     borderTopRightRadius: wp('5%'),
-    height: hp('100%'),
+    height: '100%',
     width: wp('100%'),
     paddingHorizontal: wp('6%'),
     paddingVertical: hp('2.5%'),
@@ -312,7 +307,7 @@ const styles = StyleSheet.create({
   buttonStyle: {
     backgroundColor: Color.WHITE,
     height: hp('5.5%'),
-    marginVertical: hp('0.8%'),
+    marginVertical: hp('1%'),
     borderRadius: wp('4%'),
     paddingHorizontal: wp('3%'),
     display: 'flex',
@@ -323,20 +318,22 @@ const styles = StyleSheet.create({
     borderColor: Color.PRIMARY,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: wp('3.4%'),
     fontFamily: FontFamily.poppinsMedium,
     color: Color.PRIMARY,
   },
   logoutbuttonStyle: {
+    position: 'absolute',
+    bottom: '11%',
     alignSelf: 'center',
     justifyContent: 'flex-end',
     height: hp('30%'),
   },
   logoutText: {
     textDecorationLine: 'underline',
-    fontFamily: FontFamily.poppinsSemiBold,
+    fontFamily: FontFamily.poppinsBold,
     fontWeight: 'bold',
-    fontSize: wp('4%'),
+    fontSize: wp('4.1%'),
     color: Color.PRIMARY,
   },
   actionSheetText: {

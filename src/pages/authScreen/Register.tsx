@@ -156,12 +156,6 @@ const Register: React.FC = () => {
         .collection(uid)
         .doc('plantHarvestDay')
         .set(initialFirestoreData.plantHarvestDay);
-      await firestore()
-        .collection(uid)
-        .doc('watering')
-        .collection('watering1')
-        .doc('status')
-        .set(initialFirestoreData.watering.watering1.status);
     } catch (error) {
       console.error('Error initializing user data: ', error);
     }

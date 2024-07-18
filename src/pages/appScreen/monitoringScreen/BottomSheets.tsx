@@ -175,6 +175,26 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
           nodeKey,
           baterai: data[nodeKey].baterai,
         }));
+
+        bateraiList.sort((a, b) => {
+          const nodeA = a.nodeKey.match(/(\d+)(?:_(\d+))?/);
+          const nodeB = b.nodeKey.match(/(\d+)(?:_(\d+))?/);
+
+          if (nodeA && nodeB) {
+            const mainA = parseInt(nodeA[1], 10);
+            const subA = nodeA[2] ? parseInt(nodeA[2], 10) : 0;
+            const mainB = parseInt(nodeB[1], 10);
+            const subB = nodeB[2] ? parseInt(nodeB[2], 10) : 0;
+
+            if (mainA === mainB) {
+              return subA - subB;
+            }
+            return mainA - mainB;
+          }
+
+          return 0;
+        });
+
         setBateraiData(
           (prevState: {
             [key: number]: {nodeKey: string; baterai: number}[];
