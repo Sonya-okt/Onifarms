@@ -61,8 +61,8 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
   const [bedenganList, setbedenganList] = useState<number[]>([1]);
   const [currentWeatherData, setCurrentWeatherData] =
     useState<WeatherResponse | null>(weatherData);
-  const [longitude, setLongitude] = useState('');
-  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState<string>('');
+  const [latitude, setLatitude] = useState<string>('');
   const [userUID, setUserUID] = useState<string | null>(null);
 
   // State untuk data bedengan
@@ -149,6 +149,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
         setNitrogen(formatValue(data.nitrogen || 0));
         setPhosphor(formatValue(data.phosphor || 0));
         setKalium(formatValue(data.kalium || 0));
+
         setLongitude(data.longitude || '');
         setLatitude(data.latitude || '');
 
@@ -346,8 +347,8 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
           ph: 0,
           nitrogen: 0,
           kalium: 0,
-          longitude: 0,
-          latitude: 0,
+          longitude: '',
+          latitude: '',
         })
         .then(() => {
           setbedenganList([...bedenganList, newIndex]);
@@ -389,7 +390,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <Text style={styles.collapseBodyText2}>:</Text>
 
               <TextInput
-                key="longitude" // Tambahkan key unik untuk menghindari masalah rendering
+                key={`longitude-${item}`}
                 style={styles.input}
                 value={longitude}
                 onChangeText={setLongitude}
@@ -398,9 +399,9 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               />
 
               <TouchableOpacity
-                onPress={() => handleSaveOrUpdate(index, 'longitude')}>
+                onPress={() => handleSaveOrUpdate(item, 'longitude')}>
                 <Text style={styles.longLatText}>
-                  {bedenganStatus[index]?.longitudeButtonText || 'Simpan'}
+                  {bedenganStatus[item]?.longitudeButtonText || 'Simpan'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -409,7 +410,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
               <Text style={styles.collapseBodyText2}>:</Text>
 
               <TextInput
-                key="latitude" // Tambahkan key unik untuk menghindari masalah rendering
+                key={`latitude-${item}`}
                 style={styles.input}
                 value={latitude}
                 onChangeText={setLatitude}
@@ -417,9 +418,9 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
                 placeholderTextColor={Color.PLACEHOLDER_TXT}
               />
               <TouchableOpacity
-                onPress={() => handleSaveOrUpdate(index, 'latitude')}>
+                onPress={() => handleSaveOrUpdate(item, 'latitude')}>
                 <Text style={styles.longLatText}>
-                  {bedenganStatus[index]?.latitudeButtonText || 'Simpan'}
+                  {bedenganStatus[item]?.latitudeButtonText || 'Simpan'}
                 </Text>
               </TouchableOpacity>
             </View>
