@@ -1,37 +1,32 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import ApplicationNavigator from './src/routers/ApplicationNavigator';
 import Orientation from 'react-native-orientation-locker';
-import messaging from '@react-native-firebase/messaging';
-import {Alert} from 'react-native';
+import {Alert, View} from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+import NetworkAlert from './src/components/netAlert/NetworkAlert';
 
 const App = () => {
+  const [isConnected, setIsConnected] = useState<boolean>(true);
+
   useEffect(() => {
     Orientation.lockToPortrait(); // Mengunci orientasi ke mode potret
 
-    const subscribeToTopic = async () => {
-      await messaging().subscribeToTopic('all');
-      console.log('Subscribed to topic!');
-    };
-
-    subscribeToTopic();
-
-    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-      Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
-    });
-
-    messaging().setBackgroundMessageHandler(async remoteMessage => {
-      console.log('Message handled in the background!', remoteMessage);
+    //Pantau status koneksi
+    const unsubscribeNetInfo = NetInfo.addEventListener(state => {
+      console.log('Koneksi:', state.isConnected); // Tambahkan logging status koneksi
+      setIsConnected(state.isConnected ?? true);
     });
 
     // Membersihkan subscription saat komponen unmount
     return () => {
-      unsubscribeForeground();
+      unsubscribeNetInfo();
     };
   }, []);
 
   return (
     <GestureHandlerRootView style={{flex: 1}}>
+      {!isConnected && <NetworkAlert message="Koneksi terputus" />}
       <ApplicationNavigator />
     </GestureHandlerRootView>
   );

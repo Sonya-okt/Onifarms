@@ -569,6 +569,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     flexDirection: 'row',
+    marginBottom: hp('0.8%'),
   },
   petaText: {
     fontFamily: FontFamily.poppinsMedium,

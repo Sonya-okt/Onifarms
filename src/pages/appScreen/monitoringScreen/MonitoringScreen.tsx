@@ -34,7 +34,7 @@ const MonitoringScreen: React.FC = () => {
     require('../../../components/images/monitoringImage/monitoringDay.png'),
   );
   const [modalVisible, setModalVisible] = useState(false);
-  const [location, setLocation] = useState('Tembalang');
+  const [location, setLocation] = useState('Semarang');
   const [isTyping, setIsTyping] = useState(false);
   const [weatherData, setWeatherData] = useState<WeatherResponse | null>(null);
   const [jumlahHari, setJumlahHari] = useState<number>(0);

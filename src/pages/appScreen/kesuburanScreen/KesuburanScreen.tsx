@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     borderWidth: wp('0.5%'),
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
+    elevation: 8,
     flexDirection: 'row',
   },
   percentageCircle: {

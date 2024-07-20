@@ -173,7 +173,7 @@ const LastUpdateScreen: React.FC = () => {
 
                   return newBedenganList;
                 });
-              }, 60000); // 1 minute
+              }, 600000); // 10 minute
 
             setBedenganList(prevBedenganList => {
               const newBedenganList = [...prevBedenganList];
@@ -329,6 +329,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.7,
     borderRadius: wp('5%'),
     marginBottom: hp('1.5%'),
+    elevation: 3,
   },
   textTitle: {
     fontFamily: FontFamily.poppinsBold,
@@ -342,20 +343,21 @@ const styles = StyleSheet.create({
     color: Color.PRIMARY,
   },
   indicatorContainer: {
+    height: hp('2.1%'),
     borderRadius: wp('5%'),
     justifyContent: 'center',
     alignItems: 'center',
   },
   textIndicator: {
     fontFamily: FontFamily.poppinsMedium,
-    fontSize: wp('2.5%'),
+    fontSize: wp('2.2%'),
     color: Color.WHITE,
     marginHorizontal: wp('2%'),
     textAlign: 'center',
   },
   containerText: {
     paddingHorizontal: wp('4%'),
-    marginVertical: hp('1.6%'),
+    marginVertical: hp('1.3%'),
   },
   errorText: {
     fontFamily: FontFamily.poppinsMedium,
