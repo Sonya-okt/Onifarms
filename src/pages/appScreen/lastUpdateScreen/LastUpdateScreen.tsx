@@ -35,7 +35,9 @@ const LastUpdateScreen: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const lastUpdateTimeRef = useRef<{[key: string]: number}>({});
-  const nodeUpdateTimeoutsRef = useRef<{[key: string]: NodeJS.Timeout}>({});
+  const nodeUpdateTimeoutsRef = useRef<{
+    [key: string]: ReturnType<typeof setTimeout>;
+  }>({});
 
   useEffect(() => {
     const fetchRealtimeData = async () => {
@@ -86,7 +88,6 @@ const LastUpdateScreen: React.FC = () => {
                 }
               });
 
-              // Urutkan nodes berdasarkan seluruh bagian dari id
               nodes.sort((a, b) => {
                 const getParts = (id: string) =>
                   id
@@ -133,7 +134,7 @@ const LastUpdateScreen: React.FC = () => {
             const nodeTime = new Date(`${node.date} ${node.time}`).getTime();
             const timeDifference = (currentTime - nodeTime) / (1000 * 60); // in minutes
 
-            if (timeDifference <= 1) {
+            if (timeDifference <= 10) {
               node.status = 'Updated';
             } else {
               node.status = 'Not Updated';
@@ -142,14 +143,12 @@ const LastUpdateScreen: React.FC = () => {
             node.lastUpdateTime = currentTime;
             lastUpdateTimeRef.current[`${bedenganId}_${nodeId}`] = currentTime;
 
-            // Clear any existing timeout for this node
             if (nodeUpdateTimeoutsRef.current[`${bedenganId}_${nodeId}`]) {
               clearTimeout(
                 nodeUpdateTimeoutsRef.current[`${bedenganId}_${nodeId}`],
               );
             }
 
-            // Set a timeout to update the status to "Not Updated" after 1 minute
             nodeUpdateTimeoutsRef.current[`${bedenganId}_${nodeId}`] =
               setTimeout(() => {
                 setBedenganList(prevBedenganList => {
@@ -173,7 +172,7 @@ const LastUpdateScreen: React.FC = () => {
 
                   return newBedenganList;
                 });
-              }, 600000); // 10 minute
+              }, 600000); // 10 minutes
 
             setBedenganList(prevBedenganList => {
               const newBedenganList = [...prevBedenganList];
@@ -207,7 +206,6 @@ const LastUpdateScreen: React.FC = () => {
               });
             });
 
-            // Clear all timeouts on unmount
             Object.values(nodeUpdateTimeoutsRef.current).forEach(clearTimeout);
           };
         }
