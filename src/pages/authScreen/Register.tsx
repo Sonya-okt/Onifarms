@@ -94,6 +94,7 @@ const Register: React.FC = () => {
     email: string,
     name: string,
   ) => {
+    const currentDate = new Date().toISOString().split('T')[0];
     const initialRealtimeData = {
       Average: {
         suhu: 0,
@@ -104,15 +105,13 @@ const Register: React.FC = () => {
         kalium: 0,
       },
       DataRecord: {
-        tanggal: {
-          waktu: {
-            suhu: 0,
-            kelembapan: 0,
-            ph: 0,
-            nitrogen: 0,
-            phosphor: 0,
-            kalium: 0,
-          },
+        [currentDate]: {
+          suhu: 0,
+          kelembapan: 0,
+          ph: 0,
+          nitrogen: 0,
+          phosphor: 0,
+          kalium: 0,
         },
       },
       Data: {
@@ -387,14 +386,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: wp('80%'),
     backgroundColor: '#ffffff',
-    borderWidth: 1,
+    borderWidth: wp('0.3%'),
     borderColor: Color.PRIMARY,
     borderRadius: wp('3%'),
   },
   markWrapper: {
     top: hp('-2.5%'),
     flexDirection: 'row',
-    paddingHorizontal: 10,
+    paddingHorizontal: wp('2.5%'),
     position: 'absolute',
   },
   authTextWrapper: {
@@ -413,51 +412,31 @@ const styles = StyleSheet.create({
     marginTop: hp('0.5%'),
   },
   visibilityToggle: {
-    right: 25,
+    right: wp('5%'),
     justifyContent: 'center',
     position: 'absolute',
   },
   visibilityIcon: {
-    width: 18,
-    height: 18,
+    width: wp('4.8%'),
+    height: hp('2%'),
   },
   //Register Button
   buttonRegister: {
     marginTop: hp('7%'),
-    height: 37,
-    width: 89,
+    height: hp('4.3%'),
+    width: wp('24%'),
     alignSelf: 'center',
     backgroundColor: Color.PRIMARY,
     borderRadius: wp('3%'),
     alignItems: 'center',
     justifyContent: 'center',
+    fontFamily: FontFamily.poppinsRegular,
   },
   buttonLoginTxt: {
     color: Color.WHITE,
     fontSize: wp('3.2%'),
     textAlign: 'center',
     fontFamily: FontFamily.poppinsRegular,
-  },
-
-  // Log with google
-  buttonLoginGoogle: {
-    marginTop: hp('4%'),
-    alignSelf: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: wp('2%'),
-  },
-  googleIcon: {
-    width: wp('5%'),
-    height: hp('3%'),
-  },
-  regDenganGoogle: {
-    fontSize: wp('3%'),
-    textAlign: 'center',
-    justifyContent: 'center',
-    fontFamily: FontFamily.poppinsRegular,
-    fontWeight: 'bold',
-    color: Color.PRIMARY,
   },
 });
 

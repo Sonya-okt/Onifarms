@@ -24,27 +24,23 @@ const NetworkAlert: React.FC<NetworkAlertProps> = ({message}) => {
 const styles = StyleSheet.create({
   alertContainer: {
     position: 'absolute',
-    // top: hp('10%'),
-    // left: wp('10%'),
-    // right: wp('10%'),
-    height: hp('100%'),
+    height: hp('20%'),
     width: wp('100%'),
-
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
   },
   textContainer: {
     alignItems: 'center',
-    backgroundColor: Color.WHITE,
+    backgroundColor: 'red',
     width: wp('80%'),
-    height: hp('10%'),
+    height: hp('6%'),
     justifyContent: 'center',
-    borderRadius: wp('5%'),
+    borderRadius: wp('3%'),
     elevation: 5,
   },
   alertText: {
-    color: 'red',
+    color: Color.WHITE,
     fontWeight: 'bold',
     fontSize: wp('4%'),
   },

@@ -316,7 +316,7 @@ const KesuburanScreen: React.FC = () => {
             </View>
             <View style={[styles.rentangNilaiTag, {width: wp('49%')}]}>
               <Text style={styles.rentangNilaiTagText}>
-                Informasi Kondisi normal
+                Informasi kondisi normal
               </Text>
             </View>
             <View style={styles.rentangNilaiContainer}>

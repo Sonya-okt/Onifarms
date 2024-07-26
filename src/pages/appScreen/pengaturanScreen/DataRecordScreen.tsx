@@ -21,6 +21,7 @@ import {
 import {Color, FontFamily} from '../../../constants/GlobalStyles';
 import database from '@react-native-firebase/database';
 import RNSecureStorage from 'rn-secure-storage';
+import auth from '@react-native-firebase/auth';
 
 interface DataRecord {
   date: string;
@@ -32,6 +33,13 @@ interface DataRecord {
   k: number;
 }
 
+const formatDate = (date: Date): string => {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
 const ItemComponent: React.FC<{item: DataRecord}> = ({item}) => {
   return (
     <View style={styles.itemContainer}>
@@ -39,22 +47,26 @@ const ItemComponent: React.FC<{item: DataRecord}> = ({item}) => {
         {item.date || '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.temperature !== undefined ? item.temperature.toString() : '-'}
+        {item.temperature !== undefined
+          ? Math.round(item.temperature).toString()
+          : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('15%')}]}>
-        {item.humidity !== undefined ? item.humidity.toString() : '-'}
+        {item.humidity !== undefined
+          ? Math.round(item.humidity).toString()
+          : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.pH !== undefined ? item.pH.toString() : '-'}
+        {item.pH !== undefined ? item.pH.toFixed(1) : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.n !== undefined ? item.n.toString() : '-'}
+        {item.n !== undefined ? Math.round(item.n).toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.p !== undefined ? item.p.toString() : '-'}
+        {item.p !== undefined ? Math.round(item.p).toString() : '-'}
       </Text>
       <Text style={[styles.dataTableText, {width: wp('11%')}]}>
-        {item.k !== undefined ? item.k.toString() : '-'}
+        {item.k !== undefined ? Math.round(item.k).toString() : '-'}
       </Text>
     </View>
   );
@@ -82,10 +94,15 @@ const DataRecordScreen: React.FC = () => {
   useEffect(() => {
     const fetchUserUIDAndData = async () => {
       try {
-        const uid = await RNSecureStorage.getItem('userUID');
-        if (uid) {
-          setUid(uid);
-          fetchData(uid, fromDate, toDate);
+        const user = auth().currentUser;
+        if (user) {
+          const uid = await RNSecureStorage.getItem('userUID');
+          if (uid) {
+            setUid(uid);
+            fetchData(uid, fromDate, toDate);
+          }
+        } else {
+          console.error('User is not authenticated');
         }
       } catch (error) {
         console.error('Error fetching User UID:', error);
@@ -100,7 +117,7 @@ const DataRecordScreen: React.FC = () => {
         dataRef.off();
       }
     };
-  }, []);
+  }, [uid, fromDate, toDate]);
 
   const fetchData = (
     uid: string,
@@ -120,19 +137,17 @@ const DataRecordScreen: React.FC = () => {
         );
 
         for (const dateKey of allDates) {
-          const recordDate = new Date(dateKey + 'T00:00:00Z'); // Gunakan waktu UTC
+          const recordDate = new Date(dateKey);
 
           if (
             !fromDate ||
             !toDate ||
-            (recordDate >=
-              new Date(fromDate.toISOString().split('T')[0] + 'T00:00:00Z') &&
-              recordDate <=
-                new Date(toDate.toISOString().split('T')[0] + 'T23:59:59Z'))
+            (recordDate >= new Date(fromDate.setHours(0, 0, 0, 0)) &&
+              recordDate <= new Date(toDate.setHours(23, 59, 59, 999)))
           ) {
             const record = fetchedData[dateKey];
             dataList.push({
-              date: dateKey, // Langsung gunakan dateKey
+              date: formatDate(recordDate),
               temperature: record.suhu,
               humidity: record.kelembapan,
               pH: record.ph,
@@ -226,7 +241,7 @@ const DataRecordScreen: React.FC = () => {
               style={styles.dateButton}
               onPress={() => setShowFromDatePicker(true)}>
               <Text style={styles.dateFromText}>
-                {fromDate ? fromDate.toLocaleDateString() : '-'}
+                {fromDate ? formatDate(fromDate) : '-'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -236,7 +251,7 @@ const DataRecordScreen: React.FC = () => {
               style={styles.dateButton}
               onPress={() => setShowToDatePicker(true)}>
               <Text style={styles.dateFromText}>
-                {toDate ? toDate.toLocaleDateString() : '-'}
+                {toDate ? formatDate(toDate) : '-'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -291,7 +306,7 @@ const DataRecordScreen: React.FC = () => {
           mode="date"
           display="default"
           onChange={onToDateChange}
-          maximumDate={new Date()} // Set maximum date to today
+          maximumDate={new Date()}
         />
       )}
     </LinearGradient>

@@ -1,4 +1,4 @@
-import React, {useCallback, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -7,6 +7,7 @@ import {
   FlatList,
   Alert,
   TextInput,
+  ToastAndroid,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {
@@ -146,27 +147,25 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
         setSuhu(formatValue(data.suhu || 0));
         setKelembapan(formatValue(data.kelembapan || 0));
         setPh(formatValue(data.ph || 0));
-        setNitrogen(formatValue(data.nitrogen || 0));
-        setPhosphor(formatValue(data.phosphor || 0));
-        setKalium(formatValue(data.kalium || 0));
+        setNitrogen(formatValue(data.N || 0));
+        setPhosphor(formatValue(data.P || 0));
+        setKalium(formatValue(data.K || 0));
 
-        setLongitude(data.longitude || '');
-        setLatitude(data.latitude || '');
-
-        setbedenganStatus(
-          (prevState: {
-            [key: number]: {
-              longitudeButtonText: string;
-              latitudeButtonText: string;
-            };
-          }) => ({
-            ...prevState,
-            [index]: {
-              longitudeButtonText: data.longitude ? 'Ubah' : 'Simpan',
-              latitudeButtonText: data.latitude ? 'Ubah' : 'Simpan',
-            },
-          }),
+        setLongitude(
+          data.longitude !== undefined ? data.longitude.toString() : '',
         );
+        setLatitude(
+          data.latitude !== undefined ? data.latitude.toString() : '',
+        );
+
+        setbedenganStatus(prevState => ({
+          ...prevState,
+          [index]: {
+            longitudeButtonText:
+              data.longitude !== undefined ? 'Ubah' : 'Simpan',
+            latitudeButtonText: data.latitude !== undefined ? 'Ubah' : 'Simpan',
+          },
+        }));
 
         // Fetch baterai data
         const nodeKeys = Object.keys(data).filter(key =>
@@ -196,14 +195,10 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
           return 0;
         });
 
-        setBateraiData(
-          (prevState: {
-            [key: number]: {nodeKey: string; baterai: number}[];
-          }) => ({
-            ...prevState,
-            [index]: bateraiList,
-          }),
-        );
+        setBateraiData(prevState => ({
+          ...prevState,
+          [index]: bateraiList,
+        }));
       } else {
         setSuhu(formatValue(0));
         setKelembapan(formatValue(0));
@@ -214,29 +209,18 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
         setLongitude('');
         setLatitude('');
 
-        setbedenganStatus(
-          (prevState: {
-            [key: number]: {
-              longitudeButtonText: string;
-              latitudeButtonText: string;
-            };
-          }) => ({
-            ...prevState,
-            [index]: {
-              longitudeButtonText: 'Simpan',
-              latitudeButtonText: 'Simpan',
-            },
-          }),
-        );
+        setbedenganStatus(prevState => ({
+          ...prevState,
+          [index]: {
+            longitudeButtonText: 'Simpan',
+            latitudeButtonText: 'Simpan',
+          },
+        }));
 
-        setBateraiData(
-          (prevState: {
-            [key: number]: {nodeKey: string; baterai: number}[];
-          }) => ({
-            ...prevState,
-            [index]: [],
-          }),
-        );
+        setBateraiData(prevState => ({
+          ...prevState,
+          [index]: [],
+        }));
       }
     });
 
@@ -257,10 +241,22 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
     const path = `${userUID}/Data/bedengan${index}/${type}`;
     const value = type === 'longitude' ? longitude : latitude;
 
+    if (value.trim() === '') {
+      Alert.alert('Error', `${type} tidak boleh kosong`);
+      return;
+    }
+
+    const numericValue = parseFloat(value);
+
+    if (isNaN(numericValue)) {
+      Alert.alert('Error', `${type} harus berupa angka yang valid`);
+      return;
+    }
+
     if (bedenganStatus[index][`${type}ButtonText`] === 'Simpan') {
       database()
         .ref(path)
-        .set(value)
+        .set(numericValue)
         .then(() => {
           setbedenganStatus(prevState => ({
             ...prevState,
@@ -288,7 +284,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
             onPress: () => {
               database()
                 .ref(path)
-                .set(value)
+                .set(numericValue)
                 .then(() => {
                   Alert.alert('Data berhasil diubah');
                 })
@@ -332,6 +328,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
         })
         .catch(error => {
           console.error('Error deleting bedengan:', error);
+          ToastAndroid.show('Error menghapus bedengan', ToastAndroid.SHORT);
         });
     }
   };
@@ -347,14 +344,15 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
           ph: 0,
           nitrogen: 0,
           kalium: 0,
-          longitude: '',
-          latitude: '',
+          longitude: null,
+          latitude: null,
         })
         .then(() => {
           setbedenganList([...bedenganList, newIndex]);
         })
         .catch(error => {
           console.error('Error adding bedengan:', error);
+          ToastAndroid.show('Error menambahkan bedengan', ToastAndroid.SHORT);
         });
     }
   };
@@ -396,6 +394,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
                 onChangeText={setLongitude}
                 placeholder="Isi longitude"
                 placeholderTextColor={Color.PLACEHOLDER_TXT}
+                keyboardType="numeric"
               />
 
               <TouchableOpacity
@@ -416,6 +415,7 @@ const BottomSheets: React.FC<BottomSheetsProps> = ({
                 onChangeText={setLatitude}
                 placeholder="Isi latitude"
                 placeholderTextColor={Color.PLACEHOLDER_TXT}
+                keyboardType="numeric"
               />
               <TouchableOpacity
                 onPress={() => handleSaveOrUpdate(item, 'latitude')}>

@@ -92,121 +92,131 @@ const MonitoringScreen: React.FC = () => {
     setJumlahHari(calculatedDays);
   };
 
-  const fetchFirestoreData = async () => {
-    try {
-      const uid = await RNSecureStorage.getItem('userUID');
-      if (uid) {
-        const doc = await firestore()
-          .collection(uid)
-          .doc('plantHarvestDay')
-          .get();
-
-        if (doc.exists) {
-          const data = doc.data();
-          if (data) {
-            updateJumlahHari(data);
-          }
-        }
-
-        const unsubscribe = firestore()
-          .collection(uid)
-          .doc('plantHarvestDay')
-          .onSnapshot(docSnapshot => {
-            if (docSnapshot.exists) {
-              const updatedData = docSnapshot.data();
-              if (updatedData) {
-                updateJumlahHari(updatedData);
-              }
-            }
-          });
-
-        return () => unsubscribe();
-      }
-    } catch (error) {
-      console.error('Error fetching data from Firestore:', error);
-    }
-  };
-
   useEffect(() => {
-    const fetchRealtimeData = async () => {
+    let firestoreUnsubscribe: (() => void) | undefined;
+    let realtimeListeners: Array<() => void> = [];
+
+    const updateJumlahHari = (data: any) => {
+      const startDates = Object.keys(data)
+        .filter(key => key.startsWith('startDate'))
+        .sort()
+        .map(key => data[key]);
+      const harvestDates = Object.keys(data)
+        .filter(key => key.startsWith('harvestDate'))
+        .sort()
+        .map(key => data[key]);
+
+      const today = new Date();
+      let calculatedDays = 0;
+
+      if (startDates.length > harvestDates.length) {
+        const lastStartDate = new Date(startDates[startDates.length - 1]);
+        const diffTime = today.getTime() - lastStartDate.getTime();
+        calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+
+      if (startDates.length === harvestDates.length) {
+        calculatedDays = 0;
+      }
+
+      setJumlahHari(calculatedDays);
+    };
+
+    const fetchData = async () => {
       try {
         const uid = await RNSecureStorage.getItem('userUID');
         if (uid) {
-          const suhuRef = database().ref(`${uid}/Average/suhu`);
-          const kelembapanRef = database().ref(`${uid}/Average/kelembapan`);
-          const phRef = database().ref(`${uid}/Average/ph`);
-          const nitrogenRef = database().ref(`${uid}/Average/nitrogen`);
-          const phosphorRef = database().ref(`${uid}/Average/phosphor`);
-          const kaliumRef = database().ref(`${uid}/Average/kalium`);
+          // Firestore listener
+          firestoreUnsubscribe = firestore()
+            .collection(uid)
+            .doc('plantHarvestDay')
+            .onSnapshot(
+              docSnapshot => {
+                if (docSnapshot.exists) {
+                  const data = docSnapshot.data();
+                  if (data) {
+                    updateJumlahHari(data);
+                  }
+                } else {
+                  console.log('No plant harvest data available');
+                  setJumlahHari(0);
+                }
+              },
+              error => {
+                console.error('Error fetching data from Firestore:', error);
+              },
+            );
 
-          const onValueChange = (
-            snapshot: any,
+          // Realtime Database listeners
+          const setupRealtimeListener = (
+            path: string,
             setState: React.Dispatch<React.SetStateAction<number>>,
             label: string,
             isPh: boolean = false,
           ) => {
-            if (snapshot.exists()) {
-              const value = snapshot.val();
-              const roundedValue = isPh
-                ? parseFloat(value.toFixed(1))
-                : Math.round(value);
-              setState(roundedValue);
-              console.log(`${label} data: `, snapshot.val());
-            } else {
-              console.log(`${label} data not found`);
-            }
+            const ref = database().ref(`${uid}/${path}`);
+            const onValueChange = (snapshot: any) => {
+              if (snapshot.exists()) {
+                const value = snapshot.val();
+                const roundedValue = isPh
+                  ? parseFloat(value.toFixed(1))
+                  : Math.round(value);
+                setState(roundedValue);
+              } else {
+                console.log(`${label} data not found`);
+              }
+            };
+            ref.on('value', onValueChange);
+            realtimeListeners.push(() => ref.off('value', onValueChange));
           };
 
-          suhuRef.on('value', snapshot =>
-            onValueChange(snapshot, setSuhu, 'Suhu'),
+          setupRealtimeListener('Average/suhu', setSuhu, 'Suhu');
+          setupRealtimeListener(
+            'Average/kelembapan',
+            setKelembapan,
+            'Kelembapan',
           );
-          kelembapanRef.on('value', snapshot =>
-            onValueChange(snapshot, setKelembapan, 'Kelembapan'),
-          );
-          phRef.on('value', snapshot =>
-            onValueChange(snapshot, setPh, 'pH', true),
-          );
-          nitrogenRef.on('value', snapshot =>
-            onValueChange(snapshot, setNitrogen, 'Nitrogen'),
-          );
-          phosphorRef.on('value', snapshot =>
-            onValueChange(snapshot, setPhosphor, 'Phosphor'),
-          );
-          kaliumRef.on('value', snapshot =>
-            onValueChange(snapshot, setKalium, 'Kalium'),
-          );
-
-          return () => {
-            suhuRef.off();
-            kelembapanRef.off();
-            phRef.off();
-            nitrogenRef.off();
-            phosphorRef.off();
-            kaliumRef.off();
-          };
+          setupRealtimeListener('Average/ph', setPh, 'pH', true);
+          setupRealtimeListener('Average/nitrogen', setNitrogen, 'Nitrogen');
+          setupRealtimeListener('Average/phosphor', setPhosphor, 'Phosphor');
+          setupRealtimeListener('Average/kalium', setKalium, 'Kalium');
+        } else {
+          console.log('No UID available, user might be logged out');
+          setJumlahHari(0);
+          setSuhu(0);
+          setKelembapan(0);
+          setPh(0);
+          setNitrogen(0);
+          setPhosphor(0);
+          setKalium(0);
         }
       } catch (error) {
         console.error('Error fetching User UID:', error);
       }
     };
 
-    fetchRealtimeData();
-    fetchFirestoreData();
+    fetchData();
 
-    const handleDatesChanged = (dates: {
-      startDate: string[];
-      harvestDate: string[];
-    }) => {
-      fetchFirestoreData();
-    };
-
-    const listener = EventRegister.on(
-      'datesChanged',
-      handleDatesChanged,
-    ) as string;
+    const logoutListener = EventRegister.addEventListener('logoutEvent', () => {
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+      }
+      realtimeListeners.forEach(unsubscribe => unsubscribe());
+      setJumlahHari(0);
+      setSuhu(0);
+      setKelembapan(0);
+      setPh(0);
+      setNitrogen(0);
+      setPhosphor(0);
+      setKalium(0);
+    });
 
     return () => {
-      EventRegister.rm(listener);
+      if (firestoreUnsubscribe) {
+        firestoreUnsubscribe();
+      }
+      realtimeListeners.forEach(unsubscribe => unsubscribe());
+      EventRegister.removeEventListener(logoutListener as string);
     };
   }, []);
 

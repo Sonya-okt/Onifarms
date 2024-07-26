@@ -80,20 +80,12 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
       const userCredential: FirebaseAuthTypes.UserCredential =
         await auth().signInWithEmailAndPassword(email, password);
 
-      showToast('Login sukses');
+      ToastAndroid.show('Login sukses', ToastAndroid.SHORT);
       await handleSuccessfulLogin(userCredential);
       await displayStoredData(); // Panggil fungsi untuk menampilkan data yang tersimpan
     } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
-        showToast(
-          'Akun tidak terdaftar. Mohon lakukan registrasi terlebih dahulu.',
-        );
-      } else if (error.code === 'auth/invalid-credential') {
-        showToast(
-          'Email/password tidak valid atau kadaluarsa. Silakan coba lagi.',
-        );
-      } else if (error.code === 'auth/wrong-password') {
-        showToast('Password salah.');
+      if (error.code === 'auth/invalid-credential') {
+        showToast('Email/password tidak valid');
       } else {
         console.error(error);
         showToast(error.message || 'Login gagal');
@@ -145,8 +137,17 @@ const Login: React.FC<{onLogin: () => void}> = ({onLogin}) => {
     }
 
     try {
-      await auth().sendPasswordResetEmail(email);
-      showToast('Email reset password telah dikirim');
+      // Periksa apakah email terdaftar
+      const signInMethods = await auth().fetchSignInMethodsForEmail(email);
+      console.log('Sign-in methods: ', signInMethods);
+
+      if (signInMethods.includes(auth.EmailAuthProvider.PROVIDER_ID)) {
+        showToast('Akun sudah terdaftar, silahkan lakukan login');
+      } else {
+        // Email terdaftar, kirim email reset password
+        await auth().sendPasswordResetEmail(email);
+        showToast('Email reset password telah dikirim');
+      }
     } catch (error: any) {
       console.error(error);
       showToast(error.message || 'Gagal mengirim email reset password');
@@ -282,14 +283,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: wp('80%'),
     backgroundColor: '#ffffff',
-    borderWidth: 1,
+    borderWidth: wp('0.3%'),
     borderColor: Color.PRIMARY,
     borderRadius: wp('3%'),
   },
   markWrapper: {
     top: hp('-2.5%'),
     flexDirection: 'row',
-    paddingHorizontal: 10,
+    paddingHorizontal: wp('2.5%'),
     position: 'absolute',
   },
   authTextWrapper: {
@@ -308,19 +309,19 @@ const styles = StyleSheet.create({
     marginTop: hp('0.5%'),
   },
   visibilityToggle: {
-    right: 25,
+    right: wp('5%'),
     justifyContent: 'center',
     position: 'absolute',
   },
   visibilityIcon: {
-    width: 18,
-    height: 18,
+    width: wp('4.8%'),
+    height: hp('2%'),
   },
   logintoregist: {
     alignSelf: 'center',
     flexDirection: 'row',
     position: 'absolute',
-    bottom: 0,
+    bottom: hp('0%'),
     marginBottom: hp('5%'),
   },
   logToRegText: {
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
   logToRegDirect: {
     textDecorationLine: 'underline',
     fontWeight: '600',
-    marginLeft: 2,
+    marginLeft: wp('1%'),
   },
   forgotPassword: {
     alignSelf: 'center',
@@ -340,13 +341,13 @@ const styles = StyleSheet.create({
     marginTop: hp('1.5%'),
     width: wp('76%'),
     color: Color.PRIMARY,
-    fontSize: 10,
+    fontSize: wp('2.6%'),
     textDecorationLine: 'underline',
   },
   buttonLogin: {
     marginTop: hp('8%'),
-    height: 37,
-    width: 89,
+    height: hp('4.3%'),
+    width: wp('20%'),
     alignSelf: 'center',
     backgroundColor: Color.PRIMARY,
     borderRadius: wp('3%'),
@@ -359,25 +360,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FontFamily.poppinsRegular,
     fontWeight: 'bold',
-  },
-  buttonLoginGoogle: {
-    marginTop: hp('4%'),
-    alignSelf: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: wp('2%'),
-  },
-  googleIcon: {
-    width: wp('5%'),
-    height: hp('3%'),
-  },
-  loginDenganGoogle: {
-    fontSize: wp('3%'),
-    textAlign: 'center',
-    justifyContent: 'center',
-    fontFamily: FontFamily.poppinsRegular,
-    fontWeight: 'bold',
-    color: Color.PRIMARY,
   },
 });
 

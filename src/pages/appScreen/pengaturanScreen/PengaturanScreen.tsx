@@ -8,6 +8,7 @@ import {
   Platform,
   PermissionsAndroid,
   Alert,
+  ToastAndroid,
 } from 'react-native';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {
@@ -26,12 +27,13 @@ import ActionSheet, {ActionSheetRef} from 'react-native-actions-sheet';
 import auth from '@react-native-firebase/auth';
 import RNSecureStorage from 'rn-secure-storage';
 import firestore from '@react-native-firebase/firestore';
+import {EventRegister} from 'react-native-event-listeners';
+import database from '@react-native-firebase/database';
 
 // Define the type for the navigation parameters
 type RootStackParamList = {
   MasaTanam: undefined;
   PengaturanScreen: undefined;
-  JadwalPenyiraman: undefined;
   DataRecord: undefined;
 };
 
@@ -41,12 +43,14 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
   const actionSheetRef = useRef<ActionSheetRef>(null);
   const [profileName, setProfileName] = useState<string>('-');
   const [profileEmail, setProfileEmail] = useState<string>('-');
+  const [uid, setUid] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const uid = await RNSecureStorage.getItem('userUID');
         if (uid) {
+          setUid(uid);
           const userDoc = await firestore()
             .collection(uid)
             .doc('userData')
@@ -55,7 +59,11 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
             const userData = userDoc.data();
             setProfileName(userData?.nama || '-');
             setProfileEmail(userData?.email || '-');
+          } else {
+            console.error('No such document!');
           }
+        } else {
+          console.error('No UID found in secure storage');
         }
       } catch (error) {
         console.error('Error loading profile data:', error);
@@ -151,7 +159,17 @@ const PengaturanScreen: React.FC<{onLogout: () => void}> = ({onLogout}) => {
               console.log('Removed userUID from secure storage');
               await RNSecureStorage.removeItem('token');
               console.log('Removed token from secure storage');
+              if (Platform.OS === 'android') {
+                ToastAndroid.show('Logout sukses', ToastAndroid.LONG);
+              }
 
+              // Hentikan referensi database
+              if (uid) {
+                const dataRef = database().ref(`${uid}/DataRecord`);
+                dataRef.off();
+              }
+
+              EventRegister.emit('logoutEvent'); // Emit logout event
               onLogout();
               console.log('Called onLogout');
             } catch (error) {

@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import ApplicationNavigator from './src/routers/ApplicationNavigator';
 import Orientation from 'react-native-orientation-locker';
-import {Alert, View} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import NetworkAlert from './src/components/netAlert/NetworkAlert';
 
@@ -14,7 +13,7 @@ const App = () => {
 
     //Pantau status koneksi
     const unsubscribeNetInfo = NetInfo.addEventListener(state => {
-      console.log('Koneksi:', state.isConnected); // Tambahkan logging status koneksi
+      //console.log('Koneksi:', state.isConnected); // Tambahkan logging status koneksi
       setIsConnected(state.isConnected ?? true);
     });
 

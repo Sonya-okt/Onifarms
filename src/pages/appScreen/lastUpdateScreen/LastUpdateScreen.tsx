@@ -38,6 +38,7 @@ const LastUpdateScreen: React.FC = () => {
   const nodeUpdateTimeoutsRef = useRef<{
     [key: string]: ReturnType<typeof setTimeout>;
   }>({});
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchRealtimeData = async () => {
@@ -130,18 +131,41 @@ const LastUpdateScreen: React.FC = () => {
             nodeId: string,
             node: Node,
           ) => {
-            const currentTime = new Date().getTime();
-            const nodeTime = new Date(`${node.date} ${node.time}`).getTime();
-            const timeDifference = (currentTime - nodeTime) / (1000 * 60); // in minutes
+            const updateStatus = () => {
+              const currentTime = new Date().getTime();
+              const nodeTime = new Date(`${node.date} ${node.time}`).getTime();
+              const timeDifference = (currentTime - nodeTime) / (1000 * 60); // in minutes
 
-            if (timeDifference <= 10) {
-              node.status = 'Updated';
-            } else {
-              node.status = 'Not Updated';
-            }
+              if (timeDifference <= 10) {
+                node.status = 'Updated';
+              } else {
+                node.status = 'Not Updated';
+              }
 
-            node.lastUpdateTime = currentTime;
-            lastUpdateTimeRef.current[`${bedenganId}_${nodeId}`] = currentTime;
+              node.lastUpdateTime = currentTime;
+              lastUpdateTimeRef.current[`${bedenganId}_${nodeId}`] =
+                currentTime;
+
+              setBedenganList(prevBedenganList => {
+                const newBedenganList = [...prevBedenganList];
+                const bedenganIndex = newBedenganList.findIndex(
+                  b => b.id === bedenganId,
+                );
+
+                if (bedenganIndex > -1) {
+                  const nodeIndex = newBedenganList[
+                    bedenganIndex
+                  ].nodes.findIndex(n => n.id === nodeId);
+                  if (nodeIndex > -1) {
+                    newBedenganList[bedenganIndex].nodes[nodeIndex] = node;
+                  }
+                }
+
+                return newBedenganList;
+              });
+            };
+
+            updateStatus();
 
             if (nodeUpdateTimeoutsRef.current[`${bedenganId}_${nodeId}`]) {
               clearTimeout(
@@ -150,48 +174,35 @@ const LastUpdateScreen: React.FC = () => {
             }
 
             nodeUpdateTimeoutsRef.current[`${bedenganId}_${nodeId}`] =
-              setTimeout(() => {
-                setBedenganList(prevBedenganList => {
-                  const newBedenganList = [...prevBedenganList];
-                  const bedenganIndex = newBedenganList.findIndex(
-                    b => b.id === bedenganId,
-                  );
+              setTimeout(updateStatus, 600000); // 10 minutes
 
-                  if (bedenganIndex > -1) {
-                    const nodeIndex = newBedenganList[
-                      bedenganIndex
-                    ].nodes.findIndex(n => n.id === nodeId);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+            }
 
-                    if (nodeIndex > -1) {
-                      newBedenganList[bedenganIndex].nodes[nodeIndex] = {
-                        ...newBedenganList[bedenganIndex].nodes[nodeIndex],
-                        status: 'Not Updated',
-                      };
+            intervalRef.current = setInterval(() => {
+              setBedenganList(prevBedenganList => {
+                const newBedenganList = prevBedenganList.map(bedengan => {
+                  const updatedNodes = bedengan.nodes.map(node => {
+                    const nodeTime = new Date(
+                      `${node.date} ${node.time}`,
+                    ).getTime();
+                    const timeDifference =
+                      (new Date().getTime() - nodeTime) / (1000 * 60); // in minutes
+
+                    if (timeDifference > 10) {
+                      return {...node, status: 'Not Updated'};
                     }
-                  }
 
-                  return newBedenganList;
+                    return node;
+                  });
+
+                  return {...bedengan, nodes: updatedNodes};
                 });
-              }, 600000); // 10 minutes
 
-            setBedenganList(prevBedenganList => {
-              const newBedenganList = [...prevBedenganList];
-              const bedenganIndex = newBedenganList.findIndex(
-                b => b.id === bedenganId,
-              );
-
-              if (bedenganIndex > -1) {
-                const nodeIndex = newBedenganList[
-                  bedenganIndex
-                ].nodes.findIndex(n => n.id === nodeId);
-
-                if (nodeIndex > -1) {
-                  newBedenganList[bedenganIndex].nodes[nodeIndex] = node;
-                }
-              }
-
-              return newBedenganList;
-            });
+                return newBedenganList;
+              });
+            }, 60000); // 1 minute
           };
 
           bedenganRef.on('value', onValueChange);
@@ -207,6 +218,9 @@ const LastUpdateScreen: React.FC = () => {
             });
 
             Object.values(nodeUpdateTimeoutsRef.current).forEach(clearTimeout);
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+            }
           };
         }
       } catch (error) {

@@ -39,52 +39,82 @@ const MasaTanamScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
     const fetchData = async () => {
       try {
         const uid = await RNSecureStorage.getItem('userUID');
         if (uid) {
-          const datesDoc = await firestore()
+          unsubscribe = firestore()
             .collection(uid)
             .doc('plantHarvestDay')
-            .get();
+            .onSnapshot(
+              docSnapshot => {
+                if (docSnapshot.exists) {
+                  const data = docSnapshot.data();
+                  if (data) {
+                    const startDates = Object.keys(data)
+                      .filter(key => key.startsWith('startDate'))
+                      .sort()
+                      .map(key => data[key]);
+                    const harvestDates = Object.keys(data)
+                      .filter(key => key.startsWith('harvestDate'))
+                      .sort()
+                      .map(key => data[key]);
 
-          if (datesDoc.exists) {
-            const data = datesDoc.data();
-            if (data) {
-              const startDates = Object.keys(data)
-                .filter(key => key.startsWith('startDate'))
-                .sort()
-                .map(key => data[key]);
-              const harvestDates = Object.keys(data)
-                .filter(key => key.startsWith('harvestDate'))
-                .sort()
-                .map(key => data[key]);
-
-              setDates({startDate: startDates, harvestDate: harvestDates});
-              setStartDate(startDates.slice(-1)[0] || null);
-              setHarvestDate(harvestDates.slice(-1)[0] || null);
-            } else {
-              setDates({startDate: [], harvestDate: []});
-            }
-          } else {
-            setDates({startDate: [], harvestDate: []});
-          }
+                    setDates({
+                      startDate: startDates,
+                      harvestDate: harvestDates,
+                    });
+                    setStartDate(startDates.slice(-1)[0] || null);
+                    setHarvestDate(harvestDates.slice(-1)[0] || null);
+                  }
+                } else {
+                  console.log('No plant harvest data available');
+                  setDates({startDate: [], harvestDate: []});
+                  setStartDate(null);
+                  setHarvestDate(null);
+                }
+                setLoading(false); // Set loading to false after data is fetched
+              },
+              error => {
+                console.error('Error fetching data from Firestore:', error);
+                setLoading(false); // Set loading to false if there's an error
+              },
+            );
+        } else {
+          console.log('No UID available, user might be logged out');
+          setDates({startDate: [], harvestDate: []});
+          setStartDate(null);
+          setHarvestDate(null);
+          setLoading(false); // Set loading to false if there's no UID
         }
-        setLoading(false);
       } catch (error) {
-        console.error('Failed to load dates from Firestore', error);
-        ToastAndroid.show(
-          'Gagal memuat data dari Firestore',
-          ToastAndroid.LONG,
-        );
-        setLoading(false); // Make sure to stop loading even if there's an error
+        console.error('Error fetching data from Firestore:', error);
+        setLoading(false); // Set loading to false if there's an error
       }
     };
 
     fetchData();
+
+    const logoutListener = EventRegister.addEventListener('logoutEvent', () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+      setDates({startDate: [], harvestDate: []});
+      setStartDate(null);
+      setHarvestDate(null);
+      setLoading(false); // Ensure loading is false after logout
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+      EventRegister.removeEventListener(logoutListener as string);
+    };
   }, []);
 
-  // Fungsi untuk menyimpan data tanggal ke Firestore
   const saveDatesToFirestore = async (
     dates: {startDate: string[]; harvestDate: string[]},
     uid: string,
@@ -107,7 +137,6 @@ const MasaTanamScreen: React.FC = () => {
     }
   };
 
-  // Menyimpan data tanggal ke Firestore saat ada perubahan
   const saveDates = async (dates: {
     startDate: string[];
     harvestDate: string[];
@@ -172,7 +201,6 @@ const MasaTanamScreen: React.FC = () => {
     }
   };
 
-  // Fungsi untuk menghapus data tanggal dari Firestore
   const removeDateFromFirestore = async (
     date: string,
     type: 'startDate' | 'harvestDate',
