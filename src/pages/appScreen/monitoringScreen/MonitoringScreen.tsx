@@ -112,7 +112,7 @@ const MonitoringScreen: React.FC = () => {
       if (startDates.length > harvestDates.length) {
         const lastStartDate = new Date(startDates[startDates.length - 1]);
         const diffTime = today.getTime() - lastStartDate.getTime();
-        calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        calculatedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
       }
 
       if (startDates.length === harvestDates.length) {
